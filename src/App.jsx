@@ -57,7 +57,8 @@ function allDeliverables(data) {
 // ROOT APP
 // =====================================================================
 export default function App() {
-  const { role } = useAuth()
+  const { role, user, supabaseEnabled } = useAuth()
+  const signedOut = supabaseEnabled && !user
   const [data, setData] = useState(loadInitial)
   const [tab, setTab] = useState('overview')
   const [editing, setEditing] = useState(false)
@@ -69,20 +70,24 @@ export default function App() {
   }, [data])
 
   // Edits are restricted to the IT Lead once auth is on
-  const canEdit = role === 'lead' || role === null /* auth disabled */
+  const canEdit = role === 'lead' || !supabaseEnabled /* auth disabled = local dev fallback */
 
   const TABS = useMemo(() => {
+    // Public landing page: only Overview is reachable
+    if (signedOut) return [{ id: 'overview', label: 'Overview' }]
     const base = [
       { id: 'overview',     label: 'Overview' },
       { id: 'powerbi',      label: 'Power BI' },
       { id: 'mes',          label: 'Hyper MS' },
-      // Each other-task is its own sidebar tab
       ...data.otherTracks.map(t => ({ id: `other:${t.id}`, label: shortLabel(t.title) })),
       { id: 'stakeholders', label: 'Stakeholders' },
     ]
     if (role === 'lead') base.push({ id: 'inbox', label: 'Inbox' })
     return base
-  }, [role, data.otherTracks])
+  }, [role, data.otherTracks, signedOut])
+
+  // If signed out and somehow on a non-overview tab, snap back
+  useEffect(() => { if (signedOut && tab !== 'overview') setTab('overview') }, [signedOut, tab])
 
   function updateItem(kind, index, patch) {
     setData(d => ({ ...d, [kind]: d[kind].map((it, i) => i === index ? { ...it, ...patch } : it) }))
@@ -139,7 +144,7 @@ export default function App() {
             </div>
           </div>
 
-          {tab === 'overview'     && <Overview     data={data} onRowClick={rowClick} setTab={setTab} />}
+          {tab === 'overview'     && (signedOut ? <PublicOverview data={data} /> : <Overview data={data} onRowClick={rowClick} setTab={setTab} />)}
           {tab === 'powerbi'      && <Deliverables kind="powerBi" title="Power BI" subtitle="8 deliverables, monthly cadence" rows={data.powerBi} onRowClick={rowClick} note="Long-term programme — full stability incl. cloud capacity expected into 2027." />}
           {tab === 'mes'          && <MES          data={data} onRowClick={rowClick} />}
           {tab === 'inbox'        && <Inbox />}
@@ -191,6 +196,81 @@ function Sidebar({ tab, setTab, tabs }) {
         Internal use · Hyperfeeds<br/>Animal Nutrition (Pvt) Ltd
       </div>
     </aside>
+  )
+}
+
+// =====================================================================
+// PUBLIC OVERVIEW — minimal landing page for unauthenticated visitors
+// =====================================================================
+function PublicOverview({ data }) {
+  const today = new Date()
+  const goLiveDate = new Date('2026-08-01')
+  const monthsToGoLive = Math.max(0, Math.round((goLiveDate - today) / (1000*60*60*24*30)))
+  const all = allDeliverables(data)
+  const live = all.filter(r => ['LIVE','DEPLOYED'].includes(r.status)).length
+  const inFlight = all.filter(r => ['IN_PROGRESS','TESTING','ONGOING'].includes(r.status)).length
+  const avgPct = data.tracks.length
+    ? Math.round(data.tracks.reduce((s,t) => s + (t.percent || 0), 0) / data.tracks.length)
+    : 0
+
+  return (
+    <div>
+      <div className="hero">
+        <div className="hero-head">
+          <div>
+            <h1 className="page-title" style={{ margin: 0 }}>{data.programme.title}</h1>
+            <p className="page-sub" style={{ marginTop: 6 }}>
+              {data.programme.startedLabel} · {data.programme.ownerLabel}
+            </p>
+          </div>
+          <div className="health-badge" style={{ borderColor: '#16A34A', color: '#16A34A' }}>
+            <span className="health-dot" style={{ background: '#16A34A' }} /> ON TRACK
+          </div>
+        </div>
+        <p className="hero-summary">
+          Hyperfeeds is executing a digital transformation across <strong>{data.tracks.length + data.otherTracks.length} tracks</strong>,
+          with the <strong>Hyper Manufacturing System</strong> targeted for go-live in <strong>Aug 2026</strong> ({monthsToGoLive} months out).
+          Power BI is delivering on a monthly cadence with the first page already in production use.
+        </p>
+      </div>
+
+      <div className="kpis">
+        <div className="kpi"><div className="v">{data.tracks.length + data.otherTracks.length}</div><div className="k">Digital tracks</div></div>
+        <div className="kpi"><div className="v">{live}</div><div className="k">Live in production</div></div>
+        <div className="kpi"><div className="v">{inFlight}</div><div className="k">Active deliverables</div></div>
+        <div className="kpi" style={{ borderLeft: `3px solid #1F3864` }}>
+          <div className="v" style={{ fontSize: 22 }}>Aug 2026</div>
+          <div className="k">HMS go-live · {monthsToGoLive}mo to go</div>
+        </div>
+      </div>
+
+      <div className="section-label" style={{ marginTop: 32 }}>Tracks</div>
+      <p className="section-desc">High-level view of each digital track.</p>
+      <div className="track-cards">
+        {data.tracks.map(t => {
+          const s = statusInfo(t.status)
+          return (
+            <div key={t.id} className="track-card-pro" style={{ borderTopColor: s.color, cursor: 'default' }}>
+              <div className="tcp-head">
+                <div>
+                  <div className="tcp-title">{t.name}</div>
+                  <div className="tcp-sub">{t.estComplete}</div>
+                </div>
+                <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
+              </div>
+              <div className="tcp-progress">
+                <div className="tcp-bar"><div className="tcp-fill" style={{ width: `${t.percent}%`, background: s.color }} /></div>
+                <div className="tcp-pct">{t.percent}%</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="public-cta">
+        <strong>Sign in</strong> to see the full breakdown — every deliverable, status, milestones, feedback threads, and the IT Lead inbox.
+      </div>
+    </div>
   )
 }
 

@@ -227,6 +227,19 @@ td.muted { color: var(--slate); }
 .fact .k { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .5px; }
 .fact .v { font-size: 13px; font-weight: 600; color: var(--navy); margin-top: 4px; word-break: break-word; }
 
+/* ----- Public landing CTA ----- */
+.public-cta {
+  margin-top: 32px;
+  padding: 18px 22px;
+  background: #F5F8FF;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--navy);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.public-cta strong { color: var(--navy); font-weight: 600; }
+
 /* ----- Overview hero ----- */
 .hero {
   background: var(--surface);
