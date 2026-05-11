@@ -35,9 +35,8 @@ export const tracks = [
   { id: 'powerbi',    name: 'Power BI',                    status: 'IN_PROGRESS', percent: 32, nextMilestone: 'PB-03 Stock Levels + PB-05 Debtors (May–Jun)', estComplete: 'Dec 2026 (full programme into 2027)' },
   { id: 'mes',        name: 'Hyper Manufacturing System',  status: 'TESTING',     percent: 35, nextMilestone: 'Stock Take + Sage Bridge, go-live Aug 2026', estComplete: 'Go-live Aug 2026; full stabilisation Aug 2027' },
   { id: 'monitoring', name: 'Monitoring / PC Tools',       status: 'DEFERRED',    percent: 0,  nextMilestone: '',                                  estComplete: 'TBC' },
-  { id: 'figjam',     name: 'FigJam Process Mapping',      status: 'PENDING',     percent: 5,  nextMilestone: 'Awaiting Kudzi session',           estComplete: 'TBC' },
+  { id: 'figjam',     name: 'FigJam Process Mapping',      status: 'PENDING',     percent: 5,  nextMilestone: 'Awaiting session with Kuda Ndindana', estComplete: 'TBC' },
   { id: 'automation', name: 'Microsoft Automation',        status: 'TBC',         percent: 0,  nextMilestone: '',                                  estComplete: 'TBC' },
-  { id: 'tracker',    name: 'IT Project Tracking Site',    status: 'IDEA',        percent: 80, nextMilestone: 'This site',                        estComplete: 'May 2026' },
 ]
 
 export const powerBi = [
@@ -75,9 +74,8 @@ export const mesFacts = {
 
 export const otherTracks = [
   { id: 'monitoring', title: 'Monitoring / PC Tools',           status: 'DEFERRED', note: 'Tools to be advised as capacity allows. Currently focused on Power BI and MES.' },
-  { id: 'figjam',     title: 'FigJam (Process Mapping)',        status: 'PENDING',  note: 'Will commence after requirements gathering session with Kudzi. Date TBC.' },
+  { id: 'figjam',     title: 'FigJam (Process Mapping)',        status: 'PENDING',  note: 'Will commence after requirements gathering session with Kuda Ndindana. Date TBC.' },
   { id: 'automation', title: 'Microsoft Automation (Power Automate)', status: 'TBC', note: 'Scope and start date TBC. Will address remaining manual processes after major tracks free up capacity.' },
-  { id: 'tracker',    title: 'IT Project Tracking Site',        status: 'IDEA',     note: 'Concept approved. Evaluating GitHub Pages for live hosting. Replaces Excel tracker with a live web view for management.' },
 ]
 
 export const stakeholders = [
@@ -88,7 +86,7 @@ export const stakeholders = [
   { name: 'Jonga',                  role: 'Accountant — Financial Reporting',                     group: 'Finance' },
   { name: 'Chamu',                  role: 'Production Manager — MES Lead & Change Management',    group: 'Operations' },
   { name: 'Mano Govere',            role: 'Raw Materials Manager — RM & Procurement',             group: 'Operations' },
-  { name: 'Kudzi',                  role: 'Branch Manager — Branch Operations & FigJam',          group: 'Operations' },
+  { name: 'Kuda Ndindana',          role: 'Branch Manager — Branch Operations & FigJam',          group: 'Operations' },
   { name: 'Mathuthu',               role: 'Chicks Manager — Specialist Feed Production',          group: 'Operations' },
   { name: 'Business Developer',     role: 'Demand & Growth Tracking',                             group: 'Operations' },
 ]

@@ -1,89 +1,103 @@
 # Hyperfeeds Digital Transformation Tracker
 
-Internal management dashboard for tracking IT projects at Hyperfeeds Animal Nutrition (Pvt) Ltd. Static React + Vite site — no backend, no auth.
+Internal management dashboard with **per-project feedback** for Hyperfeeds Animal Nutrition (Pvt) Ltd.
 
 ## Stack
-- React 18 + Vite
-- Plain CSS (design tokens in `src/styles.css`) — "Quiet Corporate" theme
-- Static seed data in `src/data/projects.js`
-- Live edits persisted to browser `localStorage`
+- React 18 + Vite (static, deployed to GitHub Pages)
+- Plain CSS — "Quiet Corporate" theme
+- **Supabase** (Postgres + magic-link auth) for users + comments
+- localStorage for the IT Lead's edits to project metadata (until exported to `src/data/projects.js`)
 
-## Quick start
+## Features
+- Login via magic link (no passwords) — restricted to people with profiles
+- Two roles: **viewer** (writes private feedback) and **lead** (sees all feedback + edits data)
+- Per-deliverable feedback threads — viewers' notes are private to them + the lead
+- Lead-only **Inbox** tab consolidating all feedback
+- Public read-only dashboard for unauthenticated visitors
+
+---
+
+## Supabase setup (one-time, ~5 minutes)
+
+1. Create a free project at **https://supabase.com** → New project
+2. From **Project Settings → API** copy:
+   - `Project URL`
+   - `anon public` key
+3. Open **SQL Editor → New query** → paste the contents of `supabase/schema.sql` → **Run**
+4. Allow magic-link sign-ins:
+   **Authentication → Providers → Email** → enable, ensure "Email OTP" / magic link is on
+5. Add the production site to allowed redirect URLs:
+   **Authentication → URL Configuration → Redirect URLs** → add
+   `https://jkaseke1.github.io/hyperfeeds-tracker-/` and `http://localhost:5173/`
+
+### Make yourself the IT Lead
+1. Sign in once at the live site (or `npm run dev`)
+2. In Supabase SQL Editor:
+   ```sql
+   update public.profiles set role = 'lead' where email = 'YOUR-EMAIL@example.com';
+   ```
+3. Refresh the page — you'll see the **Inbox** tab + Edit buttons.
+
+### Invite the MD and managers
+There's no whitelist — anyone with a magic link can sign in and post comments (those comments are private to them + you). To restrict access, in Supabase: **Authentication → Providers → Email** → enable **"Confirm email"** + use **"Disable signups"** and pre-create users in **Authentication → Users → Add user**.
+
+---
+
+## Local development
 
 ```bash
 npm install
+copy .env.local.example .env.local   # create the file, fill values
 npm run dev
 ```
 
-Then open the URL printed by Vite (usually http://localhost:5173).
-
-## Editing tasks (in the running site)
-
-1. Click **Edit** in the top-right.
-2. Click any track row, deliverable row (Power BI / MES), other-track card, or stakeholder.
-3. Edit fields in the modal and click **Save**.
-4. Changes are saved to your browser automatically and **reflect across every tab in real-time** (Overview KPIs, status pills, progress bars, tables — all driven from the same state).
-5. Click **Done editing** to exit edit mode.
-
-### Persistence model
-- Edits live in `localStorage` under `hyperfeeds-tracker:v1` so your changes survive page reloads.
-- Use **Export JSON** in the top-right to download the current state.
-- Use **Reset** to discard all edits and return to the baseline data in `src/data/projects.js`.
-
-### Making edits permanent for everyone
-LocalStorage is per-browser — to publish your edits to all viewers:
-
-1. Click **Export JSON** to download the current state.
-2. Open `src/data/projects.js` and update the relevant arrays to match the JSON.
-3. Commit and push — the GitHub Actions workflow will redeploy the new baseline.
-
-(Alternative: bulk-edit `src/data/projects.js` directly — the UI re-renders automatically.)
-
-## Build
-
-```bash
-npm run build
+`.env.local` example:
+```
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbG...
 ```
 
-Output is in `dist/`.
+If env vars are missing, the app runs without auth (Comments + Login are disabled).
 
-## Deploy to GitHub Pages (automatic)
+---
 
-A GitHub Actions workflow at `.github/workflows/deploy.yml` deploys to GitHub Pages on every push to `main`.
+## Deploy (GitHub Pages, automatic)
 
-### One-time setup
-1. Push this repo to GitHub (suggested name: `hyperfeeds-tracker`).
-2. On GitHub: **Settings → Pages → Build and deployment → Source = GitHub Actions**.
-3. If your repo name is **not** `hyperfeeds-tracker`, edit `.github/workflows/deploy.yml` and change `VITE_BASE` to `/<your-repo-name>/`.
-4. Push to `main`. The workflow builds and deploys automatically. Site will be live at `https://<your-username>.github.io/<repo-name>/`.
+`.github/workflows/deploy.yml` deploys on every push to `main`.
 
-### Manual deploy (alternative)
-```bash
-$env:VITE_BASE = "/hyperfeeds-tracker/"; npm run build
-npx gh-pages -d dist
+### One-time
+1. **GitHub → Settings → Secrets and variables → Actions → New repository secret** — add:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+2. **Settings → Pages → Source = GitHub Actions** (already done)
+3. Push — Actions runs, site live at:
+   ```
+   https://jkaseke1.github.io/hyperfeeds-tracker-/
+   ```
+
+### Future updates
+```powershell
+git add . ; git commit -m "msg" ; git push
 ```
-Then in GitHub → Settings → Pages, choose branch `gh-pages` / root.
+Auto-redeploys in ~90 seconds.
 
-## Project structure
+---
 
-```
-hyperfeeds-tracker/
-├─ .github/workflows/deploy.yml   ← GH Pages auto-deploy
-├─ index.html
-├─ package.json
-├─ vite.config.js                 ← reads VITE_BASE env var
-├─ src/
-│  ├─ main.jsx
-│  ├─ App.jsx                     ← UI + edit modal + state
-│  ├─ styles.css                  ← design system
-│  └─ data/projects.js            ← seed data (edit to change defaults)
-└─ README.md
-```
+## Editing project data (persistent)
+
+The IT Lead can edit any track / deliverable directly in the UI ("Edit" button → click any row). Edits live in your browser. To make them visible to everyone:
+1. Click **Export JSON** → downloads current state
+2. Paste new values into `src/data/projects.js`
+3. Commit & push.
+
+For a one-line tweak (e.g. status change), edit `src/data/projects.js` directly.
+
+---
 
 ## Status keys
 `LIVE | DEPLOYED | IN_PROGRESS | TESTING | PLANNED | ONGOING | PENDING | TBC | DEFERRED | IDEA`
 
-Each maps to a colour and label in `STATUS` inside `src/data/projects.js`.
+Mapping in `src/data/projects.js` → `STATUS`.
 
 ---
 Confidential — Hyperfeeds Animal Nutrition (Pvt) Ltd — Internal Use Only.

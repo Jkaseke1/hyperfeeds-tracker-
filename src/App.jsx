@@ -1,81 +1,76 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { defaultData, STATUS } from './data/projects.js'
+import { useAuth } from './lib/auth.jsx'
+import LoginButton from './components/LoginButton.jsx'
+import Comments from './components/Comments.jsx'
+import Inbox from './components/Inbox.jsx'
 
 // ---------- Persistence ----------
-const STORAGE_KEY = 'hyperfeeds-tracker:v1'
+const STORAGE_KEY = 'hyperfeeds-tracker:v3'
 
 function loadInitial() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return structuredClone(defaultData)
     const saved = JSON.parse(raw)
-    // Shallow merge so newly added keys in defaultData still appear
     return { ...structuredClone(defaultData), ...saved }
   } catch {
     return structuredClone(defaultData)
   }
 }
 
-// ---------- Tabs ----------
-const TABS = [
-  { id: 'overview',     label: 'Overview' },
-  { id: 'powerbi',      label: 'Power BI' },
-  { id: 'mes',          label: 'Hyper MS' },
-  { id: 'tracks',       label: 'Other Tracks' },
-  { id: 'stakeholders', label: 'Stakeholders' },
-]
-
 // ---------- Helpers ----------
 const statusInfo = (key) => STATUS[key] || { label: key, color: '#94A3B8' }
 const STATUS_KEYS = Object.keys(STATUS)
-
-function alphaBg(hex, alpha = '15') {
-  // hex like #RRGGBB → rgba/hex+alpha
-  return `${hex}${alpha}`
-}
+const alphaBg = (hex, alpha = '15') => `${hex}${alpha}`
 
 // =====================================================================
 // ROOT APP
 // =====================================================================
 export default function App() {
+  const { role } = useAuth()
   const [data, setData] = useState(loadInitial)
   const [tab, setTab] = useState('overview')
   const [editing, setEditing] = useState(false)
-  const [editTarget, setEditTarget] = useState(null) // { kind, index, item }
+  const [editTarget, setEditTarget] = useState(null)
+  const [detailTarget, setDetailTarget] = useState(null)
 
-  // Persist on every change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   }, [data])
 
-  // ----- Mutators (single source of truth — all tabs read from `data`) -----
-  function updateItem(kind, index, patch) {
-    setData(d => {
-      const next = { ...d, [kind]: d[kind].map((it, i) => i === index ? { ...it, ...patch } : it) }
-      return next
-    })
-  }
+  // Edits are restricted to the IT Lead once auth is on
+  const canEdit = role === 'lead' || role === null /* auth disabled */
 
+  const TABS = useMemo(() => {
+    const base = [
+      { id: 'overview',     label: 'Overview' },
+      { id: 'powerbi',      label: 'Power BI' },
+      { id: 'mes',          label: 'Hyper MS' },
+      { id: 'stakeholders', label: 'Stakeholders' },
+    ]
+    if (role === 'lead') base.splice(3, 0, { id: 'inbox', label: 'Inbox' })
+    return base
+  }, [role])
+
+  function updateItem(kind, index, patch) {
+    setData(d => ({ ...d, [kind]: d[kind].map((it, i) => i === index ? { ...it, ...patch } : it) }))
+  }
   function exportJson() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = `hyperfeeds-tracker-${new Date().toISOString().slice(0,10)}.json`
-    a.click()
+    a.href = url; a.download = `hyperfeeds-tracker-${new Date().toISOString().slice(0,10)}.json`; a.click()
     URL.revokeObjectURL(url)
   }
-
   function resetAll() {
-    if (!confirm('Reset all data to the baseline values? This will discard your edits.')) return
+    if (!confirm('Reset all data to the baseline? Edits will be discarded.')) return
     setData(structuredClone(defaultData))
   }
-
-  function openEditor(kind, index) {
-    if (!editing) return
-    setEditTarget({ kind, index, item: data[kind][index] })
+  function rowClick(kind, index, item) {
+    if (editing && canEdit) setEditTarget({ kind, index, item })
+    else setDetailTarget({ kind, index, item })
   }
-
   function saveEditor(patch) {
     if (!editTarget) return
     updateItem(editTarget.kind, editTarget.index, patch)
@@ -84,34 +79,39 @@ export default function App() {
 
   return (
     <div className={`app-shell ${editing ? 'editing' : ''}`}>
-      <Sidebar tab={tab} setTab={setTab} />
+      <Sidebar tab={tab} setTab={setTab} tabs={TABS} />
 
       <main className="main">
-        {editing && (
+        {editing && canEdit && (
           <div className="banner-edit">
-            Edit mode — click any task or track to edit. Changes are saved automatically.
+            Edit mode — click any row to edit. Changes saved to your browser.
           </div>
         )}
 
         <div className="main-inner">
           <div className="topbar">
             <div className="meta">
-              Prepared by {data.programme.preparedBy} · v1.0 · May 2026
+              Prepared by {data.programme.preparedBy} · v1.1 · May 2026
             </div>
             <div className="actions">
-              <button className={`btn ${editing ? 'primary' : ''}`} onClick={() => setEditing(e => !e)}>
-                {editing ? 'Done editing' : 'Edit'}
-              </button>
-              <button className="btn" onClick={exportJson}>Export JSON</button>
-              <button className="btn danger" onClick={resetAll}>Reset</button>
+              <LoginButton />
+              {canEdit && (
+                <>
+                  <button className={`btn ${editing ? 'primary' : ''}`} onClick={() => setEditing(e => !e)}>
+                    {editing ? 'Done editing' : 'Edit'}
+                  </button>
+                  <button className="btn" onClick={exportJson}>Export JSON</button>
+                  <button className="btn danger" onClick={resetAll}>Reset</button>
+                </>
+              )}
             </div>
           </div>
 
-          {tab === 'overview'     && <Overview     data={data} onEdit={openEditor} />}
-          {tab === 'powerbi'      && <Deliverables kind="powerBi" title="Power BI" subtitle="8 deliverables, monthly cadence" rows={data.powerBi} onEdit={openEditor} note="Long-term programme — full stability incl. cloud capacity expected into 2027." />}
-          {tab === 'mes'          && <MES          data={data} onEdit={openEditor} />}
-          {tab === 'tracks'       && <OtherTracks  data={data} onEdit={openEditor} />}
-          {tab === 'stakeholders' && <Stakeholders data={data} onEdit={openEditor} />}
+          {tab === 'overview'     && <Overview     data={data} onRowClick={rowClick} />}
+          {tab === 'powerbi'      && <Deliverables kind="powerBi" title="Power BI" subtitle="8 deliverables, monthly cadence" rows={data.powerBi} onRowClick={rowClick} note="Long-term programme — full stability incl. cloud capacity expected into 2027." />}
+          {tab === 'mes'          && <MES          data={data} onRowClick={rowClick} />}
+          {tab === 'inbox'        && <Inbox />}
+          {tab === 'stakeholders' && <Stakeholders data={data} onRowClick={rowClick} />}
         </div>
 
         <footer className="footer">
@@ -120,11 +120,10 @@ export default function App() {
       </main>
 
       {editTarget && (
-        <Editor
-          target={editTarget}
-          onSave={saveEditor}
-          onCancel={() => setEditTarget(null)}
-        />
+        <Editor target={editTarget} onSave={saveEditor} onCancel={() => setEditTarget(null)} />
+      )}
+      {detailTarget && (
+        <Detail target={detailTarget} onClose={() => setDetailTarget(null)} />
       )}
     </div>
   )
@@ -133,7 +132,7 @@ export default function App() {
 // =====================================================================
 // SIDEBAR
 // =====================================================================
-function Sidebar({ tab, setTab }) {
+function Sidebar({ tab, setTab, tabs }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -144,40 +143,41 @@ function Sidebar({ tab, setTab }) {
         </div>
       </div>
       <nav className="nav">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'active' : ''}
-            onClick={() => setTab(t.id)}
-          >
+        {tabs.map(t => (
+          <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
             {t.label}
           </button>
         ))}
       </nav>
       <div className="sidebar-footer">
-        Internal use · Hyperfeeds<br/>
-        Animal Nutrition (Pvt) Ltd
+        Internal use · Hyperfeeds<br/>Animal Nutrition (Pvt) Ltd
       </div>
     </aside>
   )
 }
 
 // =====================================================================
-// OVERVIEW
+// OVERVIEW (main tracks + other tracks below)
 // =====================================================================
-function Overview({ data, onEdit }) {
+function Overview({ data, onRowClick }) {
+  const allTracks = [...data.tracks, ...data.otherTracks.map(o => ({
+    id: o.id, name: o.title, status: o.status, percent: 0,
+    nextMilestone: o.note, estComplete: '', _other: true,
+  }))]
+
   const kpis = useMemo(() => {
-    const live = data.tracks.filter(t => ['LIVE','DEPLOYED'].includes(t.status)).length
+    const live = allTracks.filter(t => ['LIVE','DEPLOYED'].includes(t.status)).length
     const inFlight =
       data.powerBi.filter(p => ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length +
       data.mes.filter(p =>     ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length
-    const avg = Math.round(data.tracks.reduce((s,t) => s + (t.percent || 0), 0) / data.tracks.length)
+    const main = data.tracks
+    const avg = main.length ? Math.round(main.reduce((s,t) => s + (t.percent || 0), 0) / main.length) : 0
     const goLive = data.mes.find(m => m.id === 'MES-11')?.targetDate || 'TBC'
     return [
-      { v: live,         k: 'Tracks live' },
-      { v: inFlight,     k: 'Deliverables in flight' },
-      { v: `${avg}%`,    k: 'Programme complete' },
-      { v: goLive,       k: 'Next major go-live' },
+      { v: live,      k: 'Tracks live' },
+      { v: inFlight,  k: 'Deliverables in flight' },
+      { v: `${avg}%`, k: 'Programme complete' },
+      { v: goLive,    k: 'Next major go-live' },
     ]
   }, [data])
 
@@ -199,28 +199,54 @@ function Overview({ data, onEdit }) {
 
       <div className="section-label">Tracks</div>
       <div className="tracks-list">
-        {data.tracks.map((t, i) => {
-          const s = statusInfo(t.status)
-          return (
-            <div
-              key={t.id}
-              className="track-row editable"
-              onClick={() => onEdit('tracks', i)}
-            >
-              <div className="name">{t.name}</div>
-              <div className="status">
-                <span className="dot" style={{ background: s.color }} />
-                <span>{s.label}</span>
-              </div>
-              <div className="ms">{t.nextMilestone || '—'}</div>
-              <div className="bar-track">
-                <div className="bar-fill" style={{ width: `${t.percent}%`, background: s.color }} />
-              </div>
-              <div className="pct">{t.percent}%</div>
-            </div>
-          )
-        })}
+        {data.tracks.map((t, i) => (
+          <TrackRow key={t.id} t={t} onClick={() => onRowClick('tracks', i, t)} />
+        ))}
       </div>
+
+      {data.otherTracks.length > 0 && (
+        <>
+          <div className="section-label" style={{ marginTop: 32 }}>Other Tasks</div>
+          <div className="tracks-list">
+            {data.otherTracks.map((t, i) => (
+              <OtherRow key={t.id} t={t} onClick={() => onRowClick('otherTracks', i, t)} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function TrackRow({ t, onClick }) {
+  const s = statusInfo(t.status)
+  return (
+    <div className="track-row editable" onClick={onClick}>
+      <div className="name">{t.name}</div>
+      <div className="status">
+        <span className="dot" style={{ background: s.color }} />
+        <span>{s.label}</span>
+      </div>
+      <div className="ms">{t.nextMilestone || '—'}</div>
+      <div className="bar-track">
+        <div className="bar-fill" style={{ width: `${t.percent}%`, background: s.color }} />
+      </div>
+      <div className="pct">{t.percent}%</div>
+    </div>
+  )
+}
+
+function OtherRow({ t, onClick }) {
+  const s = statusInfo(t.status)
+  return (
+    <div className="track-row editable" onClick={onClick}>
+      <div className="name">{t.title}</div>
+      <div className="status">
+        <span className="dot" style={{ background: s.color }} />
+        <span>{s.label}</span>
+      </div>
+      <div className="ms" style={{ gridColumn: 'span 2' }}>{t.note}</div>
+      <div className="pct" style={{ color: 'var(--slate)', fontWeight: 400 }}>—</div>
     </div>
   )
 }
@@ -235,7 +261,7 @@ const FILTERS = [
   { id: 'done',    label: 'Done',        match: r => ['DEPLOYED','LIVE'].includes(r.status) },
 ]
 
-function Deliverables({ kind, title, subtitle, rows, onEdit, note }) {
+function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
   const [filter, setFilter] = useState('all')
   const f = FILTERS.find(x => x.id === filter) || FILTERS[0]
   const visible = rows.map((r, i) => ({ r, i })).filter(({ r }) => f.match(r))
@@ -247,11 +273,7 @@ function Deliverables({ kind, title, subtitle, rows, onEdit, note }) {
 
       <div className="filters">
         {FILTERS.map(x => (
-          <button
-            key={x.id}
-            className={`chip ${filter === x.id ? 'active' : ''}`}
-            onClick={() => setFilter(x.id)}
-          >
+          <button key={x.id} className={`chip ${filter === x.id ? 'active' : ''}`} onClick={() => setFilter(x.id)}>
             {x.label}
           </button>
         ))}
@@ -272,13 +294,11 @@ function Deliverables({ kind, title, subtitle, rows, onEdit, note }) {
             {visible.map(({ r, i }) => {
               const s = statusInfo(r.status)
               return (
-                <tr key={r.id} className="editable" onClick={() => onEdit(kind, i)}>
+                <tr key={r.id} className="editable" onClick={() => onRowClick(kind, i, r)}>
                   <td className="id">{r.id}</td>
                   <td>{r.title}</td>
                   <td>
-                    <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>
-                      {s.label}
-                    </span>
+                    <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
                   </td>
                   <td className="muted">{r.targetDate}</td>
                   <td className="muted">{r.notes || '—'}</td>
@@ -302,9 +322,9 @@ function Deliverables({ kind, title, subtitle, rows, onEdit, note }) {
 }
 
 // =====================================================================
-// MES TAB (table + facts)
+// MES TAB
 // =====================================================================
-function MES({ data, onEdit }) {
+function MES({ data, onRowClick }) {
   return (
     <div>
       <Deliverables
@@ -312,7 +332,7 @@ function MES({ data, onEdit }) {
         title="Hyper Manufacturing System"
         subtitle="12 components · go-live Aug 2026 · full stabilisation Aug 2027"
         rows={data.mes}
-        onEdit={onEdit}
+        onRowClick={onRowClick}
         note="Long-term programme — full stability expected ~12 months post go-live (by Aug 2027)."
       />
       <div className="section-label">Key Facts</div>
@@ -327,40 +347,9 @@ function MES({ data, onEdit }) {
 }
 
 // =====================================================================
-// OTHER TRACKS
-// =====================================================================
-function OtherTracks({ data, onEdit }) {
-  return (
-    <div>
-      <h1 className="page-title">Other Tracks</h1>
-      <p className="page-sub">Additional initiatives and exploratory projects</p>
-      <div className="cards-grid">
-        {data.otherTracks.map((t, i) => {
-          const s = statusInfo(t.status)
-          return (
-            <div
-              key={t.id}
-              className="track-card editable"
-              style={{ borderTopColor: s.color }}
-              onClick={() => onEdit('otherTracks', i)}
-            >
-              <div className="head">
-                <h3>{t.title}</h3>
-                <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
-              </div>
-              <p>{t.note}</p>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// =====================================================================
 // STAKEHOLDERS
 // =====================================================================
-function Stakeholders({ data, onEdit }) {
+function Stakeholders({ data, onRowClick }) {
   const groups = useMemo(() => {
     const map = new Map()
     data.stakeholders.forEach((p, i) => {
@@ -380,7 +369,7 @@ function Stakeholders({ data, onEdit }) {
           <div className="ghead">{group}</div>
           <div className="people-list">
             {people.map(p => (
-              <div key={p._i} className="person editable" onClick={() => onEdit('stakeholders', p._i)}>
+              <div key={p._i} className="person editable" onClick={() => onRowClick('stakeholders', p._i, p)}>
                 <div className="pn">{p.name}</div>
                 <div className="pr">{p.role}</div>
               </div>
@@ -393,14 +382,61 @@ function Stakeholders({ data, onEdit }) {
 }
 
 // =====================================================================
-// EDITOR MODAL — schemas per kind
+// DETAIL MODAL (read-only details + comments)
+// =====================================================================
+function Detail({ target, onClose }) {
+  const { kind, item } = target
+  const commentItemId =
+    kind === 'tracks'      ? item.id :
+    kind === 'powerBi'     ? item.id :
+    kind === 'mes'         ? item.id :
+    kind === 'otherTracks' ? item.id :
+    kind === 'stakeholders'? `person:${item.name}` :
+    `${kind}:${item.id || item.name}`
+
+  // Stakeholders: no comments thread
+  const showComments = kind !== 'stakeholders'
+  const s = item.status ? statusInfo(item.status) : null
+
+  return (
+    <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="modal" style={{ maxWidth: 640 }}>
+        <div className="modal-head">
+          <h3>{item.id ? `${item.id} · ` : ''}{item.title || item.name}</h3>
+          <button type="button" className="btn small" onClick={onClose}>Close</button>
+        </div>
+        <div className="modal-body">
+          {s && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
+              {item.targetDate && <span style={{ fontSize: 12, color: 'var(--slate)' }}>Target: {item.targetDate}</span>}
+              {typeof item.percent === 'number' && (
+                <span style={{ fontSize: 12, color: 'var(--slate)' }}>· {item.percent}% complete</span>
+              )}
+            </div>
+          )}
+          {item.nextMilestone && <div style={{ fontSize: 13 }}><strong>Next:</strong> {item.nextMilestone}</div>}
+          {item.estComplete    && <div style={{ fontSize: 13 }}><strong>ETA:</strong> {item.estComplete}</div>}
+          {item.notes          && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.notes}</div>}
+          {item.note           && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.note}</div>}
+          {item.role           && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.role}</div>}
+
+          {showComments && <Comments kind={kind} itemId={commentItemId} />}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =====================================================================
+// EDITOR MODAL (lead/edit-mode only)
 // =====================================================================
 const SCHEMAS = {
   tracks: [
-    { key: 'name',          label: 'Track name',       type: 'text' },
-    { key: 'status',        label: 'Status',           type: 'status' },
-    { key: 'percent',       label: 'Progress %',       type: 'number', min: 0, max: 100 },
-    { key: 'nextMilestone', label: 'Next milestone',   type: 'text' },
+    { key: 'name',          label: 'Track name',           type: 'text' },
+    { key: 'status',        label: 'Status',               type: 'status' },
+    { key: 'percent',       label: 'Progress %',           type: 'number', min: 0, max: 100 },
+    { key: 'nextMilestone', label: 'Next milestone',       type: 'text' },
     { key: 'estComplete',   label: 'Estimated completion', type: 'text' },
   ],
   powerBi: [
@@ -428,31 +464,24 @@ const SCHEMAS = {
     { key: 'group', label: 'Group', type: 'text' },
   ],
 }
-
 const KIND_TITLES = {
   tracks: 'Edit Track',
   powerBi: 'Edit Power BI Deliverable',
-  mes: 'Edit MES Component',
-  otherTracks: 'Edit Other Track',
+  mes: 'Edit Hyper MS Component',
+  otherTracks: 'Edit Other Task',
   stakeholders: 'Edit Stakeholder',
 }
 
 function Editor({ target, onSave, onCancel }) {
   const schema = SCHEMAS[target.kind] || []
   const [form, setForm] = useState(() => ({ ...target.item }))
-
-  function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
-
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   function submit(e) {
     e.preventDefault()
-    // Coerce numbers
     const out = { ...form }
-    schema.forEach(f => {
-      if (f.type === 'number') out[f.key] = Number(out[f.key]) || 0
-    })
+    schema.forEach(f => { if (f.type === 'number') out[f.key] = Number(out[f.key]) || 0 })
     onSave(out)
   }
-
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel() }}>
       <form className="modal" onSubmit={submit}>
@@ -464,15 +493,9 @@ function Editor({ target, onSave, onCancel }) {
           {schema.map(f => (
             <div className="field" key={f.key}>
               <label>{f.label}</label>
-              {f.type === 'text' && (
-                <input type="text" value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'number' && (
-                <input type="number" min={f.min} max={f.max} value={form[f.key] ?? 0} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'textarea' && (
-                <textarea value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
-              )}
+              {f.type === 'text' && <input type="text" value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />}
+              {f.type === 'number' && <input type="number" min={f.min} max={f.max} value={form[f.key] ?? 0} onChange={e => set(f.key, e.target.value)} />}
+              {f.type === 'textarea' && <textarea value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />}
               {f.type === 'status' && (
                 <select value={form[f.key] ?? 'PLANNED'} onChange={e => set(f.key, e.target.value)}>
                   {STATUS_KEYS.map(k => <option key={k} value={k}>{STATUS[k].label} ({k})</option>)}
@@ -482,9 +505,7 @@ function Editor({ target, onSave, onCancel }) {
           ))}
         </div>
         <div className="modal-foot">
-          <span style={{ fontSize: 11, color: 'var(--slate)' }}>
-            Saved automatically across all tabs · Use "Export JSON" to make permanent.
-          </span>
+          <span style={{ fontSize: 11, color: 'var(--slate)' }}>Saved to your browser. Use "Export JSON" to make permanent.</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" className="btn" onClick={onCancel}>Cancel</button>
             <button type="submit" className="btn primary">Save</button>
