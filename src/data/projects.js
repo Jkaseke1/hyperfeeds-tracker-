@@ -70,10 +70,55 @@ export const mesFacts = {
   url:             'jkaseke1.github.io/HYPER-MES',
 }
 
+// Other digital tracks (each has its own sidebar page).
+// `items` holds sub-deliverables; can be empty until scoped.
 export const otherTracks = [
-  { id: 'monitoring', title: 'Monitoring / PC Tools',           status: 'DEFERRED', note: 'Tools to be advised as capacity allows. Currently focused on Power BI and MES.' },
-  { id: 'figjam',     title: 'FigJam (Process Mapping)',        status: 'PENDING',  note: 'Will commence after requirements gathering session with Kuda Ndindana. Date TBC.' },
-  { id: 'automation', title: 'Microsoft Automation (Power Automate)', status: 'TBC', note: 'Scope and start date TBC. Will address remaining manual processes after major tracks free up capacity.' },
+  {
+    id: 'monitoring',
+    title: 'Monitoring / PC Tools',
+    status: 'DEFERRED',
+    owner: 'Joseph (IT Lead)',
+    targetStart: 'TBC',
+    description: 'Set of tools and dashboards for monitoring company PCs, servers, networks, and backups. Deferred while Power BI and HMS take priority.',
+    note: 'Tools to be advised as capacity allows. Currently focused on Power BI and HMS.',
+    items: [
+      { id: 'MON-01', title: 'PC inventory & asset tracking',         status: 'PLANNED',  targetDate: 'TBC', notes: 'Scope to be defined.' },
+      { id: 'MON-02', title: 'Network & uptime monitoring',           status: 'PLANNED',  targetDate: 'TBC', notes: '' },
+      { id: 'MON-03', title: 'Backup verification & alerting',        status: 'PLANNED',  targetDate: 'TBC', notes: '' },
+      { id: 'MON-04', title: 'Antivirus / endpoint compliance check', status: 'DEFERRED', targetDate: 'TBC', notes: '' },
+    ],
+  },
+  {
+    id: 'figjam',
+    title: 'FigJam (Process Mapping)',
+    status: 'PENDING',
+    owner: 'Joseph (IT Lead) + Kuda Ndindana',
+    targetStart: 'TBC',
+    description: 'Visual mapping of branch operations and key business processes in FigJam. Used to surface gaps, redundancies, and automation candidates.',
+    note: 'Will commence after requirements gathering session with Kuda Ndindana. Date TBC.',
+    items: [
+      { id: 'FJ-01', title: 'Requirements gathering session (Kuda Ndindana)', status: 'PENDING', targetDate: 'TBC', notes: 'Awaiting date.' },
+      { id: 'FJ-02', title: 'Map: Procurement → Receipt → Stock',             status: 'PLANNED', targetDate: 'TBC', notes: '' },
+      { id: 'FJ-03', title: 'Map: Production → Dispatch → Branch',            status: 'PLANNED', targetDate: 'TBC', notes: '' },
+      { id: 'FJ-04', title: 'Map: Sales → Invoicing → Debtors',               status: 'PLANNED', targetDate: 'TBC', notes: '' },
+      { id: 'FJ-05', title: 'Validation & sign-off with stakeholders',        status: 'PLANNED', targetDate: 'TBC', notes: '' },
+    ],
+  },
+  {
+    id: 'automation',
+    title: 'Microsoft Automation (Power Automate)',
+    status: 'TBC',
+    owner: 'Joseph (IT Lead)',
+    targetStart: 'After major tracks',
+    description: 'Use Power Automate to remove repetitive manual steps surfaced by the FigJam mapping (e.g. email approvals, document routing, alerts).',
+    note: 'Scope and start date TBC. Will address remaining manual processes after major tracks free up capacity.',
+    items: [
+      { id: 'AUT-01', title: 'Identify automation candidates (from FigJam)', status: 'TBC', targetDate: 'TBC', notes: 'Depends on FigJam output.' },
+      { id: 'AUT-02', title: 'Prototype 2–3 quick wins',                     status: 'TBC', targetDate: 'TBC', notes: '' },
+      { id: 'AUT-03', title: 'Pilot + measure time saved',                   status: 'TBC', targetDate: 'TBC', notes: '' },
+      { id: 'AUT-04', title: 'Rollout & user training',                      status: 'TBC', targetDate: 'TBC', notes: '' },
+    ],
+  },
 ]
 
 export const stakeholders = [

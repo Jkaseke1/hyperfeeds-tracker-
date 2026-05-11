@@ -6,7 +6,7 @@ import Comments from './components/Comments.jsx'
 import Inbox from './components/Inbox.jsx'
 
 // ---------- Persistence ----------
-const STORAGE_KEY = 'hyperfeeds-tracker:v4'
+const STORAGE_KEY = 'hyperfeeds-tracker:v5'
 
 function loadInitial() {
   try {
@@ -23,6 +23,35 @@ function loadInitial() {
 const statusInfo = (key) => STATUS[key] || { label: key, color: '#94A3B8' }
 const STATUS_KEYS = Object.keys(STATUS)
 const alphaBg = (hex, alpha = '15') => `${hex}${alpha}`
+
+// Shorten a track title for the sidebar
+function shortLabel(title) {
+  if (/Monitoring/i.test(title)) return 'Monitoring'
+  if (/FigJam/i.test(title))     return 'FigJam'
+  if (/Automation/i.test(title)) return 'Automation'
+  return title.length > 16 ? title.slice(0, 14) + '…' : title
+}
+
+// Group statuses into lifecycle stages for the Overview "Pipeline" view.
+const STAGES = [
+  { id: 'live',     label: 'Live / Deployed', desc: 'In production use',                statuses: ['LIVE','DEPLOYED'],         color: '#16A34A' },
+  { id: 'testing',  label: 'In Testing',      desc: 'Built, pre go-live verification',  statuses: ['TESTING'],                 color: '#0EA5E9' },
+  { id: 'building', label: 'In Build',        desc: 'Active development',               statuses: ['IN_PROGRESS'],             color: '#1F3864' },
+  { id: 'planned',  label: 'Planned',         desc: 'Scoped, not started yet',          statuses: ['PLANNED'],                 color: '#94A3B8' },
+  { id: 'ongoing',  label: 'Ongoing',         desc: 'Continuous activity',              statuses: ['ONGOING'],                 color: '#A78BFA' },
+  { id: 'onhold',   label: 'On Hold / TBC',   desc: 'Pending, deferred or to be scoped', statuses: ['PENDING','TBC','DEFERRED','IDEA'], color: '#D97706' },
+]
+
+// Collect every deliverable in the programme with a tag of where it comes from
+function allDeliverables(data) {
+  const out = []
+  data.powerBi.forEach(r => out.push({ ...r, _source: 'Power BI', _kind: 'powerBi', _tabId: 'powerbi' }))
+  data.mes.forEach(r     => out.push({ ...r, _source: 'Hyper MS', _kind: 'mes',     _tabId: 'mes' }))
+  data.otherTracks.forEach(t => {
+    (t.items || []).forEach(r => out.push({ ...r, _source: t.title, _kind: 'otherItems', _tabId: `other:${t.id}` }))
+  })
+  return out
+}
 
 // =====================================================================
 // ROOT APP
@@ -47,11 +76,13 @@ export default function App() {
       { id: 'overview',     label: 'Overview' },
       { id: 'powerbi',      label: 'Power BI' },
       { id: 'mes',          label: 'Hyper MS' },
+      // Each other-task is its own sidebar tab
+      ...data.otherTracks.map(t => ({ id: `other:${t.id}`, label: shortLabel(t.title) })),
       { id: 'stakeholders', label: 'Stakeholders' },
     ]
-    if (role === 'lead') base.splice(3, 0, { id: 'inbox', label: 'Inbox' })
+    if (role === 'lead') base.push({ id: 'inbox', label: 'Inbox' })
     return base
-  }, [role])
+  }, [role, data.otherTracks])
 
   function updateItem(kind, index, patch) {
     setData(d => ({ ...d, [kind]: d[kind].map((it, i) => i === index ? { ...it, ...patch } : it) }))
@@ -68,7 +99,8 @@ export default function App() {
     setData(structuredClone(defaultData))
   }
   function rowClick(kind, index, item) {
-    if (editing && canEdit) setEditTarget({ kind, index, item })
+    // otherItems are read-only for now (no edit schema). Always open detail.
+    if (editing && canEdit && kind !== 'otherItems') setEditTarget({ kind, index, item })
     else setDetailTarget({ kind, index, item })
   }
   function saveEditor(patch) {
@@ -107,11 +139,17 @@ export default function App() {
             </div>
           </div>
 
-          {tab === 'overview'     && <Overview     data={data} onRowClick={rowClick} />}
+          {tab === 'overview'     && <Overview     data={data} onRowClick={rowClick} setTab={setTab} />}
           {tab === 'powerbi'      && <Deliverables kind="powerBi" title="Power BI" subtitle="8 deliverables, monthly cadence" rows={data.powerBi} onRowClick={rowClick} note="Long-term programme — full stability incl. cloud capacity expected into 2027." />}
           {tab === 'mes'          && <MES          data={data} onRowClick={rowClick} />}
           {tab === 'inbox'        && <Inbox />}
           {tab === 'stakeholders' && <Stakeholders data={data} onRowClick={rowClick} />}
+          {tab.startsWith('other:') && (() => {
+            const id = tab.slice(6)
+            const idx = data.otherTracks.findIndex(t => t.id === id)
+            if (idx < 0) return null
+            return <OtherTaskPage track={data.otherTracks[idx]} index={idx} onRowClick={rowClick} />
+          })()}
         </div>
 
         <footer className="footer">
@@ -157,39 +195,45 @@ function Sidebar({ tab, setTab, tabs }) {
 }
 
 // =====================================================================
-// OVERVIEW (main tracks + other tracks below)
+// OVERVIEW — programme insights + pipeline-by-stage
 // =====================================================================
-function Overview({ data, onRowClick }) {
-  const allTracks = [...data.tracks, ...data.otherTracks.map(o => ({
-    id: o.id, name: o.title, status: o.status, percent: 0,
-    nextMilestone: o.note, estComplete: '', _other: true,
-  }))]
+function Overview({ data, onRowClick, setTab }) {
+  const all = useMemo(() => allDeliverables(data), [data])
+
+  // Bucket every deliverable by lifecycle stage
+  const byStage = useMemo(() => {
+    const map = Object.fromEntries(STAGES.map(s => [s.id, []]))
+    all.forEach(r => {
+      const stage = STAGES.find(s => s.statuses.includes(r.status))
+      if (stage) map[stage.id].push(r)
+    })
+    return map
+  }, [all])
 
   const kpis = useMemo(() => {
-    const active = data.tracks.filter(t => ['LIVE','DEPLOYED','IN_PROGRESS','TESTING'].includes(t.status)).length
-    const inFlight =
-      data.powerBi.filter(p => ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length +
-      data.mes.filter(p =>     ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length
-    const main = data.tracks
-    const avg = main.length ? Math.round(main.reduce((s,t) => s + (t.percent || 0), 0) / main.length) : 0
+    const total = all.length
+    const live = byStage.live.length
+    const inFlight = byStage.testing.length + byStage.building.length + byStage.ongoing.length
+    const avg = data.tracks.length
+      ? Math.round(data.tracks.reduce((s,t) => s + (t.percent || 0), 0) / data.tracks.length)
+      : 0
     const goLive = data.mes.find(m => m.id === 'MES-11')?.targetDate || 'TBC'
     const today = new Date()
     const goLiveDate = new Date('2026-08-01')
     const monthsToGoLive = Math.max(0, Math.round((goLiveDate - today) / (1000 * 60 * 60 * 24 * 30)))
-    const phaseLabel = today < goLiveDate ? `Pre Go-Live · ${monthsToGoLive}mo to go` : 'Go-Live / Post Go-Live'
     return [
-      { v: active,     k: 'Active main tracks' },
-      { v: inFlight,   k: 'Deliverables in flight' },
-      { v: `${avg}%`,  k: 'Programme complete' },
-      { v: goLive,     k: `Go-Live · ${phaseLabel}` },
+      { v: `${live} / ${total}`, k: 'Deliverables live' },
+      { v: inFlight,             k: 'In flight (testing + build + ongoing)' },
+      { v: `${avg}%`,            k: 'Main programme complete' },
+      { v: goLive,               k: `HMS go-live · ${monthsToGoLive}mo to go` },
     ]
-  }, [data])
+  }, [data, all, byStage])
 
   return (
     <div>
       <h1 className="page-title">{data.programme.title}</h1>
       <p className="page-sub">
-        {data.programme.startedLabel} · {data.tracks.length} active tracks · {data.programme.ownerLabel}
+        {data.programme.startedLabel} · {data.tracks.length + data.otherTracks.length} digital tracks · {data.programme.ownerLabel}
       </p>
 
       <div className="kpis">
@@ -201,20 +245,79 @@ function Overview({ data, onRowClick }) {
         ))}
       </div>
 
-      <div className="section-label">Tracks</div>
+      {/* ---- Pipeline by Stage ---- */}
+      <div className="section-label" style={{ marginTop: 32 }}>Pipeline by Stage</div>
+      <p style={{ fontSize: 12, color: 'var(--slate)', margin: '4px 0 12px' }}>
+        Every deliverable across all tracks, grouped by where it is in the lifecycle.
+      </p>
+      <div className="stage-grid">
+        {STAGES.map(stage => {
+          const items = byStage[stage.id]
+          return (
+            <div key={stage.id} className="stage-card" style={{ borderTopColor: stage.color }}>
+              <div className="stage-head">
+                <div>
+                  <div className="stage-label">{stage.label}</div>
+                  <div className="stage-desc">{stage.desc}</div>
+                </div>
+                <div className="stage-count" style={{ color: stage.color }}>{items.length}</div>
+              </div>
+              <div className="stage-items">
+                {items.length === 0 && <div className="muted" style={{ fontSize: 12 }}>—</div>}
+                {items.map(r => (
+                  <button
+                    key={`${r._tabId}:${r.id}`}
+                    className="stage-item"
+                    onClick={() => setTab(r._tabId)}
+                    title={`Go to ${r._source}`}
+                  >
+                    <span className="stage-id">{r.id}</span>
+                    <span className="stage-title">{r.title}</span>
+                    <span className="stage-src">{r._source}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ---- Main tracks summary ---- */}
+      <div className="section-label" style={{ marginTop: 32 }}>Main Tracks</div>
       <div className="tracks-list">
         {data.tracks.map((t, i) => (
           <TrackRow key={t.id} t={t} onClick={() => onRowClick('tracks', i, t)} />
         ))}
       </div>
 
+      {/* ---- Other initiatives summary (compact) ---- */}
       {data.otherTracks.length > 0 && (
         <>
-          <div className="section-label" style={{ marginTop: 32 }}>Other Tasks</div>
-          <div className="tracks-list">
-            {data.otherTracks.map((t, i) => (
-              <OtherRow key={t.id} t={t} onClick={() => onRowClick('otherTracks', i, t)} />
-            ))}
+          <div className="section-label" style={{ marginTop: 32 }}>Other Initiatives</div>
+          <p style={{ fontSize: 12, color: 'var(--slate)', margin: '4px 0 12px' }}>
+            Click a card or use the sidebar for the full breakdown.
+          </p>
+          <div className="other-grid">
+            {data.otherTracks.map((t, i) => {
+              const s = statusInfo(t.status)
+              const done = (t.items || []).filter(x => ['LIVE','DEPLOYED'].includes(x.status)).length
+              const total = (t.items || []).length
+              return (
+                <button
+                  key={t.id}
+                  className="other-card"
+                  style={{ borderTopColor: s.color }}
+                  onClick={() => setTab(`other:${t.id}`)}
+                >
+                  <div className="other-title">{t.title}</div>
+                  <div className="other-meta">
+                    <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>{done}/{total} items</span>
+                  </div>
+                  <div className="other-note">{t.description || t.note}</div>
+                </button>
+              )
+            })}
           </div>
         </>
       )}
@@ -240,17 +343,83 @@ function TrackRow({ t, onClick }) {
   )
 }
 
-function OtherRow({ t, onClick }) {
-  const s = statusInfo(t.status)
+// =====================================================================
+// OTHER-TASK detail page (Monitoring / FigJam / Automation)
+// =====================================================================
+function OtherTaskPage({ track, index, onRowClick }) {
+  const s = statusInfo(track.status)
+  const items = track.items || []
+
+  // Mini-KPIs for this track
+  const counts = STAGES.map(stage => ({
+    stage,
+    n: items.filter(x => stage.statuses.includes(x.status)).length,
+  }))
+
   return (
-    <div className="track-row editable" onClick={onClick}>
-      <div className="name">{t.title}</div>
-      <div className="status">
-        <span className="dot" style={{ background: s.color }} />
-        <span>{s.label}</span>
+    <div>
+      <h1 className="page-title">{track.title}</h1>
+      <p className="page-sub">
+        Owner: {track.owner || '—'} · Target start: {track.targetStart || 'TBC'}
+      </p>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
+        <span className="pill" style={{ color: s.color, background: alphaBg(s.color), fontSize: 12 }}>{s.label}</span>
+        <span className="muted" style={{ fontSize: 12 }}>{items.length} sub-items</span>
       </div>
-      <div className="ms" style={{ gridColumn: 'span 2' }}>{t.note}</div>
-      <div className="pct" style={{ color: 'var(--slate)', fontWeight: 400 }}>—</div>
+
+      <p style={{ fontSize: 13, color: 'var(--text)', maxWidth: 720, marginTop: 16 }}>
+        {track.description}
+      </p>
+      {track.note && (
+        <div className="notebar"><span>▍</span><span>{track.note}</span></div>
+      )}
+
+      {/* Stage mini-grid */}
+      <div className="section-label" style={{ marginTop: 24 }}>Status Mix</div>
+      <div className="stage-mini-grid">
+        {counts.map(({ stage, n }) => (
+          <div key={stage.id} className="stage-mini" style={{ borderTopColor: stage.color }}>
+            <div className="stage-mini-count" style={{ color: stage.color }}>{n}</div>
+            <div className="stage-mini-label">{stage.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Items list */}
+      <div className="section-label" style={{ marginTop: 24 }}>Planned Items</div>
+      {items.length === 0 ? (
+        <div className="muted" style={{ fontSize: 13 }}>No items yet — scope to be defined.</div>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style={{width: '90px'}}>ID</th>
+                <th>Item</th>
+                <th style={{width: '140px'}}>Status</th>
+                <th style={{width: '120px'}}>Target</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((r, i) => {
+                const rs = statusInfo(r.status)
+                // We pass the parent track index + sub-index through a synthetic kind
+                return (
+                  <tr key={r.id} className="editable" onClick={() => onRowClick('otherItems', { trackIndex: index, itemIndex: i }, { ...r, _trackTitle: track.title })}>
+                    <td className="id">{r.id}</td>
+                    <td>{r.title}</td>
+                    <td><span className="pill" style={{ color: rs.color, background: alphaBg(rs.color) }}>{rs.label}</span></td>
+                    <td className="muted">{r.targetDate}</td>
+                    <td className="muted">{r.notes || '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -450,11 +619,12 @@ function Stakeholders({ data, onRowClick }) {
 function Detail({ target, onClose }) {
   const { kind, item } = target
   const commentItemId =
-    kind === 'tracks'      ? item.id :
-    kind === 'powerBi'     ? item.id :
-    kind === 'mes'         ? item.id :
-    kind === 'otherTracks' ? item.id :
-    kind === 'stakeholders'? `person:${item.name}` :
+    kind === 'tracks'       ? item.id :
+    kind === 'powerBi'      ? item.id :
+    kind === 'mes'          ? item.id :
+    kind === 'otherTracks'  ? item.id :
+    kind === 'otherItems'   ? item.id :
+    kind === 'stakeholders' ? `person:${item.name}` :
     `${kind}:${item.id || item.name}`
 
   // Stakeholders: no comments thread

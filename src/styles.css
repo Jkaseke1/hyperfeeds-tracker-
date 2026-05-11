@@ -227,6 +227,83 @@ td.muted { color: var(--slate); }
 .fact .k { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .5px; }
 .fact .v { font-size: 13px; font-weight: 600; color: var(--navy); margin-top: 4px; word-break: break-word; }
 
+/* ----- Pipeline by Stage (Overview) ----- */
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 8px;
+}
+@media (max-width: 1100px) { .stage-grid { grid-template-columns: repeat(2, 1fr); } }
+.stage-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 140px;
+}
+.stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.stage-label { font-size: 13px; font-weight: 700; color: var(--navy); }
+.stage-desc { font-size: 11px; color: var(--slate); margin-top: 2px; }
+.stage-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 32px; line-height: 1; font-weight: 700;
+}
+.stage-items { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow: auto; }
+.stage-item {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: 8px; align-items: center;
+  padding: 4px 6px;
+  text-align: left;
+  background: transparent; border: 0; border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.stage-item:hover { background: #F2F2EE; }
+.stage-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--slate); }
+.stage-title { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stage-src { font-size: 10px; color: var(--slate); text-transform: uppercase; letter-spacing: .4px; }
+
+/* ----- Other initiatives cards on Overview ----- */
+.other-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 1100px) { .other-grid { grid-template-columns: repeat(2, 1fr); } }
+.other-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  padding: 14px 16px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: background 120ms;
+}
+.other-card:hover { background: #F8F8F4; }
+.other-title { font-size: 14px; font-weight: 600; color: var(--navy); }
+.other-meta { display: flex; gap: 12px; align-items: center; }
+.other-note { font-size: 12px; color: var(--slate); }
+
+/* ----- Status mix mini-grid (other-task detail page) ----- */
+.stage-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1100px) { .stage-mini-grid { grid-template-columns: repeat(3, 1fr); } }
+.stage-mini {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  padding: 12px;
+  text-align: center;
+}
+.stage-mini-count { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stage-mini-label { font-size: 11px; color: var(--slate); margin-top: 2px; }
+
 /* ----- Phase timeline (HMS) ----- */
 .phases {
   display: grid;
