@@ -227,6 +227,42 @@ td.muted { color: var(--slate); }
 .fact .k { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: .5px; }
 .fact .v { font-size: 13px; font-weight: 600; color: var(--navy); margin-top: 4px; word-break: break-word; }
 
+/* ----- Phase timeline (HMS) ----- */
+.phases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0 32px;
+}
+.phase {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  padding: 14px 16px;
+  display: flex; gap: 12px;
+  transition: all 150ms;
+}
+.phase.current {
+  border-left-color: var(--navy);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  background: #F8FAFE;
+}
+.phase-step {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--slate);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600;
+  flex-shrink: 0;
+}
+.phase.current .phase-step { background: var(--navy); color: #fff; }
+.phase-info { display: flex; flex-direction: column; gap: 2px; }
+.phase-label { font-size: 13px; font-weight: 600; color: var(--navy); }
+.phase-now { margin-left: 6px; font-size: 10px; color: var(--green); font-weight: 700; letter-spacing: .5px; }
+.phase-sub { font-size: 12px; color: var(--slate); }
+.phase-range { font-size: 11px; color: var(--slate); margin-top: 2px; }
+
 /* ----- Footer ----- */
 .footer {
   text-align: center; padding: 24px;

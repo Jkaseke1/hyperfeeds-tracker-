@@ -6,7 +6,7 @@ import Comments from './components/Comments.jsx'
 import Inbox from './components/Inbox.jsx'
 
 // ---------- Persistence ----------
-const STORAGE_KEY = 'hyperfeeds-tracker:v3'
+const STORAGE_KEY = 'hyperfeeds-tracker:v4'
 
 function loadInitial() {
   try {
@@ -166,18 +166,22 @@ function Overview({ data, onRowClick }) {
   }))]
 
   const kpis = useMemo(() => {
-    const live = allTracks.filter(t => ['LIVE','DEPLOYED'].includes(t.status)).length
+    const active = data.tracks.filter(t => ['LIVE','DEPLOYED','IN_PROGRESS','TESTING'].includes(t.status)).length
     const inFlight =
       data.powerBi.filter(p => ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length +
       data.mes.filter(p =>     ['IN_PROGRESS','TESTING','ONGOING','DEPLOYED','LIVE'].includes(p.status)).length
     const main = data.tracks
     const avg = main.length ? Math.round(main.reduce((s,t) => s + (t.percent || 0), 0) / main.length) : 0
     const goLive = data.mes.find(m => m.id === 'MES-11')?.targetDate || 'TBC'
+    const today = new Date()
+    const goLiveDate = new Date('2026-08-01')
+    const monthsToGoLive = Math.max(0, Math.round((goLiveDate - today) / (1000 * 60 * 60 * 24 * 30)))
+    const phaseLabel = today < goLiveDate ? `Pre Go-Live · ${monthsToGoLive}mo to go` : 'Go-Live / Post Go-Live'
     return [
-      { v: live,      k: 'Tracks live' },
-      { v: inFlight,  k: 'Deliverables in flight' },
-      { v: `${avg}%`, k: 'Programme complete' },
-      { v: goLive,    k: 'Next major go-live' },
+      { v: active,     k: 'Active main tracks' },
+      { v: inFlight,   k: 'Deliverables in flight' },
+      { v: `${avg}%`,  k: 'Programme complete' },
+      { v: goLive,     k: `Go-Live · ${phaseLabel}` },
     ]
   }, [data])
 
@@ -325,22 +329,81 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
 // MES TAB
 // =====================================================================
 function MES({ data, onRowClick }) {
+  const today = new Date()
+  const phases = [
+    { id: 'pre',  label: 'Pre Go-Live',          sub: 'Build & Test', range: 'now – Jul 2026', start: new Date('2026-04-01'), end: new Date('2026-08-01') },
+    { id: 'go',   label: 'Go-Live',              sub: 'Supervised cut-over', range: 'Aug 2026',     start: new Date('2026-08-01'), end: new Date('2026-09-01') },
+    { id: 'post', label: 'Post Go-Live',         sub: 'Stabilisation',       range: 'Sep 2026 – Aug 2027', start: new Date('2026-09-01'), end: new Date('2027-08-31') },
+  ]
+  const currentPhase = phases.find(p => today >= p.start && today < p.end) || phases[0]
+
   return (
     <div>
-      <Deliverables
-        kind="mes"
-        title="Hyper Manufacturing System"
-        subtitle="12 components · go-live Aug 2026 · full stabilisation Aug 2027"
-        rows={data.mes}
-        onRowClick={onRowClick}
-        note="Long-term programme — full stability expected ~12 months post go-live (by Aug 2027)."
-      />
+      <h1 className="page-title">Hyper Manufacturing System</h1>
+      <p className="page-sub">12 components · go-live Aug 2026 · full stabilisation Aug 2027</p>
+
+      {/* Phase timeline */}
+      <div className="phases">
+        {phases.map((p, i) => (
+          <div key={p.id} className={`phase ${currentPhase.id === p.id ? 'current' : ''}`}>
+            <div className="phase-step">{i + 1}</div>
+            <div className="phase-info">
+              <div className="phase-label">{p.label}{currentPhase.id === p.id && <span className="phase-now">· NOW</span>}</div>
+              <div className="phase-sub">{p.sub}</div>
+              <div className="phase-range">{p.range}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <PhaseGroup phase="pre"  title="Pre Go-Live — Build & Test"   subtitle="All work before going live in August" rows={data.mes} onRowClick={onRowClick} />
+      <PhaseGroup phase="go"   title="Go-Live"                     subtitle="Supervised cut-over to production"   rows={data.mes} onRowClick={onRowClick} />
+      <PhaseGroup phase="post" title="Post Go-Live — Stabilisation" subtitle="~12 months of fixes, tuning & training" rows={data.mes} onRowClick={onRowClick} />
+
       <div className="section-label">Key Facts</div>
       <div className="facts">
         <div className="fact"><div className="k">Production Lines</div><div className="v">{data.mesFacts.productionLines.join(', ')}</div></div>
         <div className="fact"><div className="k">Integrated With</div><div className="v">{data.mesFacts.integratedWith}</div></div>
         <div className="fact"><div className="k">Sage Bridge</div><div className="v">{data.mesFacts.bridge}</div></div>
         <div className="fact"><div className="k">MES URL</div><div className="v">{data.mesFacts.url}</div></div>
+      </div>
+    </div>
+  )
+}
+
+function PhaseGroup({ phase, title, subtitle, rows, onRowClick }) {
+  const items = rows.map((r, i) => ({ r, i })).filter(({ r }) => r.phase === phase)
+  if (items.length === 0) return null
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div className="section-label" style={{ marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12 }}>{subtitle}</div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style={{width: '90px'}}>ID</th>
+              <th>Component</th>
+              <th style={{width: '140px'}}>Status</th>
+              <th style={{width: '120px'}}>Target</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(({ r, i }) => {
+              const s = statusInfo(r.status)
+              return (
+                <tr key={r.id} className="editable" onClick={() => onRowClick('mes', i, r)}>
+                  <td className="id">{r.id}</td>
+                  <td>{r.title}</td>
+                  <td><span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span></td>
+                  <td className="muted">{r.targetDate}</td>
+                  <td className="muted">{r.notes || '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )

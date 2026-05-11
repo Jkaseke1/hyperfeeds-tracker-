@@ -34,9 +34,6 @@ export const STATUS = {
 export const tracks = [
   { id: 'powerbi',    name: 'Power BI',                    status: 'IN_PROGRESS', percent: 32, nextMilestone: 'PB-03 Stock Levels + PB-05 Debtors (May–Jun)', estComplete: 'Dec 2026 (full programme into 2027)' },
   { id: 'mes',        name: 'Hyper Manufacturing System',  status: 'TESTING',     percent: 35, nextMilestone: 'Stock Take + Sage Bridge, go-live Aug 2026', estComplete: 'Go-live Aug 2026; full stabilisation Aug 2027' },
-  { id: 'monitoring', name: 'Monitoring / PC Tools',       status: 'DEFERRED',    percent: 0,  nextMilestone: '',                                  estComplete: 'TBC' },
-  { id: 'figjam',     name: 'FigJam Process Mapping',      status: 'PENDING',     percent: 5,  nextMilestone: 'Awaiting session with Kuda Ndindana', estComplete: 'TBC' },
-  { id: 'automation', name: 'Microsoft Automation',        status: 'TBC',         percent: 0,  nextMilestone: '',                                  estComplete: 'TBC' },
 ]
 
 export const powerBi = [
@@ -51,18 +48,18 @@ export const powerBi = [
 ]
 
 export const mes = [
-  { id: 'MES-01', title: 'Production Planning',                          status: 'TESTING', targetDate: 'May 2026', notes: '' },
-  { id: 'MES-02', title: 'Formulations & BOM (83 formulations seeded)',  status: 'TESTING', targetDate: 'May 2026', notes: '83 formulations seeded.' },
-  { id: 'MES-03', title: 'Raw Materials — all functions (73 RMs live)',  status: 'TESTING', targetDate: 'May 2026', notes: '73 RMs live.' },
-  { id: 'MES-04', title: 'Production Execution (batch tracking)',        status: 'TESTING', targetDate: 'May 2026', notes: '' },
-  { id: 'MES-05', title: 'Stock Take / Inventory',                       status: 'TESTING', targetDate: 'Jun 2026', notes: '' },
-  { id: 'MES-06', title: 'Sage 200 Bridge (all 7 events)',               status: 'TESTING', targetDate: 'Jun 2026', notes: 'Bridge: localhost:50119' },
-  { id: 'MES-07', title: 'Dispatch & Branch Stock Movements',            status: 'PLANNED', targetDate: 'Jun 2026', notes: '' },
-  { id: 'MES-08', title: 'QC (Quality Control) Module',                  status: 'PLANNED', targetDate: 'Jun 2026', notes: '' },
-  { id: 'MES-09', title: 'Reporting & Reconciliation',                   status: 'PLANNED', targetDate: 'Jul 2026', notes: '' },
-  { id: 'MES-10', title: 'Operator Training & Change Management',        status: 'PLANNED', targetDate: 'Jul 2026', notes: '' },
-  { id: 'MES-11', title: 'HMS Go-Live (supervised)',                     status: 'PLANNED', targetDate: 'Aug 2026', notes: 'Go-live 3 months from May 2026.' },
-  { id: 'MES-12', title: 'Post Go-Live Stabilisation',                   status: 'PLANNED', targetDate: 'Aug 2027', notes: 'Full stabilisation expected ~12 months post go-live.' },
+  { id: 'MES-01', title: 'Production Planning',                          status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-02', title: 'Formulations & BOM (83 formulations seeded)',  status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '83 formulations seeded.' },
+  { id: 'MES-03', title: 'Raw Materials — all functions (73 RMs live)',  status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '73 RMs live.' },
+  { id: 'MES-04', title: 'Production Execution (batch tracking)',        status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-05', title: 'Stock Take / Inventory',                       status: 'TESTING', targetDate: 'Jun 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-06', title: 'Sage 200 Bridge (all 7 events)',               status: 'TESTING', targetDate: 'Jun 2026', phase: 'pre',  notes: 'Bridge: localhost:50119' },
+  { id: 'MES-07', title: 'Dispatch & Branch Stock Movements',            status: 'PLANNED', targetDate: 'Jun 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-08', title: 'QC (Quality Control) Module',                  status: 'PLANNED', targetDate: 'Jun 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-09', title: 'Reporting & Reconciliation',                   status: 'PLANNED', targetDate: 'Jul 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-10', title: 'Operator Training & Change Management',        status: 'PLANNED', targetDate: 'Jul 2026', phase: 'pre',  notes: '' },
+  { id: 'MES-11', title: 'HMS Go-Live (supervised)',                     status: 'PLANNED', targetDate: 'Aug 2026', phase: 'go',   notes: 'Go-live 3 months from May 2026.' },
+  { id: 'MES-12', title: 'Post Go-Live Stabilisation',                   status: 'PLANNED', targetDate: 'Aug 2027', phase: 'post', notes: 'Full stabilisation expected ~12 months post go-live.' },
 ]
 
 export const mesFacts = {
