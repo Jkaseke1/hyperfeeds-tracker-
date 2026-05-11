@@ -195,12 +195,12 @@ function Sidebar({ tab, setTab, tabs }) {
 }
 
 // =====================================================================
-// OVERVIEW — programme insights + pipeline-by-stage
+// OVERVIEW — executive briefing
 // =====================================================================
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 function Overview({ data, onRowClick, setTab }) {
   const all = useMemo(() => allDeliverables(data), [data])
-
-  // Bucket every deliverable by lifecycle stage
   const byStage = useMemo(() => {
     const map = Object.fromEntries(STAGES.map(s => [s.id, []]))
     all.forEach(r => {
@@ -210,109 +210,204 @@ function Overview({ data, onRowClick, setTab }) {
     return map
   }, [all])
 
-  const kpis = useMemo(() => {
-    const total = all.length
-    const live = byStage.live.length
-    const inFlight = byStage.testing.length + byStage.building.length + byStage.ongoing.length
-    const avg = data.tracks.length
-      ? Math.round(data.tracks.reduce((s,t) => s + (t.percent || 0), 0) / data.tracks.length)
-      : 0
-    const goLive = data.mes.find(m => m.id === 'MES-11')?.targetDate || 'TBC'
-    const today = new Date()
-    const goLiveDate = new Date('2026-08-01')
-    const monthsToGoLive = Math.max(0, Math.round((goLiveDate - today) / (1000 * 60 * 60 * 24 * 30)))
-    return [
-      { v: `${live} / ${total}`, k: 'Deliverables live' },
-      { v: inFlight,             k: 'In flight (testing + build + ongoing)' },
-      { v: `${avg}%`,            k: 'Main programme complete' },
-      { v: goLive,               k: `HMS go-live · ${monthsToGoLive}mo to go` },
-    ]
-  }, [data, all, byStage])
+  const today = new Date()
+  const currentMonthLabel = `${MONTHS[today.getMonth()]} ${today.getFullYear()}`
+  const goLiveDate = new Date('2026-08-01')
+  const monthsToGoLive = Math.max(0, Math.round((goLiveDate - today) / (1000*60*60*24*30)))
+
+  const total = all.length
+  const liveN = byStage.live.length
+  const testingN = byStage.testing.length
+  const buildN = byStage.building.length
+  const ongoingN = byStage.ongoing.length
+  const plannedN = byStage.planned.length
+  const onholdN = byStage.onhold.length
+
+  const avgPct = data.tracks.length
+    ? Math.round(data.tracks.reduce((s,t) => s + (t.percent || 0), 0) / data.tracks.length)
+    : 0
+
+  const inFlight = testingN + buildN + ongoingN
+  const health =
+    onholdN > inFlight ? { color: '#D97706', label: 'AT WATCH', desc: 'More items are on hold than active. Capacity is the constraint.' } :
+    inFlight === 0     ? { color: '#94A3B8', label: 'IDLE',     desc: 'Nothing currently in flight.' } :
+                         { color: '#16A34A', label: 'ON TRACK', desc: 'Active development under way against the August go-live target.' }
+
+  // Items in flight this month — anything currently IN_PROGRESS or TESTING
+  const focus = all.filter(r => ['IN_PROGRESS','TESTING'].includes(r.status))
 
   return (
     <div>
-      <h1 className="page-title">{data.programme.title}</h1>
-      <p className="page-sub">
-        {data.programme.startedLabel} · {data.tracks.length + data.otherTracks.length} digital tracks · {data.programme.ownerLabel}
-      </p>
+      {/* ---- HERO ---- */}
+      <div className="hero">
+        <div className="hero-head">
+          <div>
+            <h1 className="page-title" style={{ margin: 0 }}>{data.programme.title}</h1>
+            <p className="page-sub" style={{ marginTop: 6 }}>
+              {data.programme.startedLabel} · {data.tracks.length + data.otherTracks.length} digital tracks · {data.programme.ownerLabel}
+            </p>
+          </div>
+          <div className="health-badge" style={{ borderColor: health.color, color: health.color }}>
+            <span className="health-dot" style={{ background: health.color }} />
+            {health.label}
+          </div>
+        </div>
+        <p className="hero-summary">
+          {health.desc} The Hyper Manufacturing System is in <strong>pre go-live testing</strong>, with cut-over targeted for
+          <strong> {data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026'}</strong> ({monthsToGoLive} months out).
+          Power BI is delivering on a monthly cadence — <strong>{liveN}</strong> page{liveN===1?'':'s'} already live, <strong>{buildN}</strong> in active build.
+        </p>
+      </div>
 
+      {/* ---- KPIs ---- */}
       <div className="kpis">
-        {kpis.map((k, i) => (
-          <div className="kpi" key={i}>
-            <div className="v">{k.v}</div>
-            <div className="k">{k.k}</div>
+        <div className="kpi">
+          <div className="v">{liveN} <span className="kpi-of">/ {total}</span></div>
+          <div className="k">Deliverables live</div>
+        </div>
+        <div className="kpi">
+          <div className="v">{inFlight}</div>
+          <div className="k">In flight now</div>
+        </div>
+        <div className="kpi">
+          <div className="v">{avgPct}%</div>
+          <div className="k">Main programme complete</div>
+        </div>
+        <div className="kpi" style={{ borderLeft: `3px solid #1F3864` }}>
+          <div className="v" style={{ fontSize: 22 }}>{data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026'}</div>
+          <div className="k">HMS go-live · {monthsToGoLive}mo to go</div>
+        </div>
+      </div>
+
+      {/* ---- PROGRAMME DISTRIBUTION (stacked bar) ---- */}
+      <div className="section-label" style={{ marginTop: 36 }}>Programme Distribution</div>
+      <p className="section-desc">All {total} deliverables across every track, by lifecycle stage.</p>
+      <div className="stack-bar" role="img" aria-label="Distribution of deliverables by stage">
+        {STAGES.map(stage => {
+          const n = byStage[stage.id].length
+          const pct = total ? (n / total) * 100 : 0
+          if (pct === 0) return null
+          return (
+            <div
+              key={stage.id}
+              className="stack-seg"
+              style={{ width: `${pct}%`, background: stage.color }}
+              title={`${stage.label}: ${n} (${Math.round(pct)}%)`}
+            >
+              {pct >= 8 && <span>{n}</span>}
+            </div>
+          )
+        })}
+      </div>
+      <div className="stack-legend">
+        {STAGES.map(stage => {
+          const n = byStage[stage.id].length
+          return (
+            <div key={stage.id} className="stack-leg-item">
+              <span className="stack-leg-dot" style={{ background: stage.color }} />
+              <span className="stack-leg-label">{stage.label}</span>
+              <span className="stack-leg-count">{n}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ---- ROADMAP ---- */}
+      <div className="section-label" style={{ marginTop: 36 }}>Roadmap · Key Milestones</div>
+      <p className="section-desc">From the first Power BI go-live through HMS stabilisation.</p>
+      <div className="roadmap">
+        {[
+          { date: 'Apr 2026', title: 'PB-01 Tonnage live',                phase: 'past' },
+          { date: 'Jun 2026', title: 'PB-03 Stock + PB-05 Debtors live',  phase: 'now'  },
+          { date: 'Jul 2026', title: 'PB-02 Procurement build',           phase: 'next' },
+          { date: 'Aug 2026', title: 'HMS Go-Live (supervised)',          phase: 'major', major: true },
+          { date: 'Sep 2026', title: 'PB-06 Production page',             phase: 'future' },
+          { date: 'Dec 2026', title: 'Power BI core complete',            phase: 'future' },
+          { date: 'Aug 2027', title: 'HMS full stabilisation',            phase: 'major', major: true },
+        ].map((m, i) => (
+          <div key={i} className={`milestone ${m.phase} ${m.major ? 'major' : ''}`}>
+            <div className="milestone-dot" />
+            <div className="milestone-date">{m.date}</div>
+            <div className="milestone-title">{m.title}</div>
           </div>
         ))}
       </div>
 
-      {/* ---- Pipeline by Stage ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Pipeline by Stage</div>
-      <p style={{ fontSize: 12, color: 'var(--slate)', margin: '4px 0 12px' }}>
-        Every deliverable across all tracks, grouped by where it is in the lifecycle.
-      </p>
-      <div className="stage-grid">
-        {STAGES.map(stage => {
-          const items = byStage[stage.id]
+      {/* ---- THIS MONTH FOCUS ---- */}
+      <div className="section-label" style={{ marginTop: 36 }}>Focus · {currentMonthLabel}</div>
+      <p className="section-desc">Deliverables actively being built or tested right now.</p>
+      {focus.length === 0 ? (
+        <div className="muted" style={{ fontSize: 13 }}>Nothing in active build or testing.</div>
+      ) : (
+        <div className="focus-list">
+          {focus.map(r => {
+            const s = statusInfo(r.status)
+            return (
+              <button key={`${r._tabId}:${r.id}`} className="focus-row" onClick={() => setTab(r._tabId)}>
+                <span className="focus-id">{r.id}</span>
+                <span className="focus-title">{r.title}</span>
+                <span className="focus-src">{r._source}</span>
+                <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
+                <span className="focus-target muted">{r.targetDate || ''}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ---- MAIN TRACK CARDS ---- */}
+      <div className="section-label" style={{ marginTop: 36 }}>Main Tracks</div>
+      <div className="track-cards">
+        {data.tracks.map((t, i) => {
+          const s = statusInfo(t.status)
+          const sub = t.id === 'powerbi' ? data.powerBi : t.id === 'mes' ? data.mes : []
+          const subLive    = sub.filter(x => ['LIVE','DEPLOYED'].includes(x.status)).length
+          const subTesting = sub.filter(x => x.status === 'TESTING').length
+          const subBuild   = sub.filter(x => x.status === 'IN_PROGRESS').length
+          const subPlanned = sub.filter(x => x.status === 'PLANNED').length
           return (
-            <div key={stage.id} className="stage-card" style={{ borderTopColor: stage.color }}>
-              <div className="stage-head">
+            <div key={t.id} className="track-card-pro" style={{ borderTopColor: s.color }} onClick={() => setTab(t.id === 'powerbi' ? 'powerbi' : 'mes')}>
+              <div className="tcp-head">
                 <div>
-                  <div className="stage-label">{stage.label}</div>
-                  <div className="stage-desc">{stage.desc}</div>
+                  <div className="tcp-title">{t.name}</div>
+                  <div className="tcp-sub">{t.estComplete}</div>
                 </div>
-                <div className="stage-count" style={{ color: stage.color }}>{items.length}</div>
+                <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
               </div>
-              <div className="stage-items">
-                {items.length === 0 && <div className="muted" style={{ fontSize: 12 }}>—</div>}
-                {items.map(r => (
-                  <button
-                    key={`${r._tabId}:${r.id}`}
-                    className="stage-item"
-                    onClick={() => setTab(r._tabId)}
-                    title={`Go to ${r._source}`}
-                  >
-                    <span className="stage-id">{r.id}</span>
-                    <span className="stage-title">{r.title}</span>
-                    <span className="stage-src">{r._source}</span>
-                  </button>
-                ))}
+              <div className="tcp-progress">
+                <div className="tcp-bar"><div className="tcp-fill" style={{ width: `${t.percent}%`, background: s.color }} /></div>
+                <div className="tcp-pct">{t.percent}%</div>
+              </div>
+              <div className="tcp-meta">
+                <strong>Next:</strong> {t.nextMilestone || '—'}
+              </div>
+              <div className="tcp-mix">
+                <span className="tcp-stat"><span className="tcp-num" style={{ color: '#16A34A' }}>{subLive}</span> live</span>
+                <span className="tcp-stat"><span className="tcp-num" style={{ color: '#0EA5E9' }}>{subTesting}</span> testing</span>
+                <span className="tcp-stat"><span className="tcp-num" style={{ color: '#1F3864' }}>{subBuild}</span> build</span>
+                <span className="tcp-stat"><span className="tcp-num" style={{ color: '#94A3B8' }}>{subPlanned}</span> planned</span>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* ---- Main tracks summary ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Main Tracks</div>
-      <div className="tracks-list">
-        {data.tracks.map((t, i) => (
-          <TrackRow key={t.id} t={t} onClick={() => onRowClick('tracks', i, t)} />
-        ))}
-      </div>
-
-      {/* ---- Other initiatives summary (compact) ---- */}
+      {/* ---- OTHER INITIATIVES ---- */}
       {data.otherTracks.length > 0 && (
         <>
-          <div className="section-label" style={{ marginTop: 32 }}>Other Initiatives</div>
-          <p style={{ fontSize: 12, color: 'var(--slate)', margin: '4px 0 12px' }}>
-            Click a card or use the sidebar for the full breakdown.
-          </p>
+          <div className="section-label" style={{ marginTop: 36 }}>Other Initiatives</div>
+          <p className="section-desc">Smaller IT tracks. Capacity-dependent — may begin once main tracks free up.</p>
           <div className="other-grid">
-            {data.otherTracks.map((t, i) => {
+            {data.otherTracks.map(t => {
               const s = statusInfo(t.status)
               const done = (t.items || []).filter(x => ['LIVE','DEPLOYED'].includes(x.status)).length
-              const total = (t.items || []).length
+              const tot = (t.items || []).length
               return (
-                <button
-                  key={t.id}
-                  className="other-card"
-                  style={{ borderTopColor: s.color }}
-                  onClick={() => setTab(`other:${t.id}`)}
-                >
+                <button key={t.id} className="other-card" style={{ borderTopColor: s.color }} onClick={() => setTab(`other:${t.id}`)}>
                   <div className="other-title">{t.title}</div>
                   <div className="other-meta">
                     <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
-                    <span className="muted" style={{ fontSize: 12 }}>{done}/{total} items</span>
+                    <span className="muted" style={{ fontSize: 12 }}>{done}/{tot} items</span>
                   </div>
                   <div className="other-note">{t.description || t.note}</div>
                 </button>
@@ -321,24 +416,6 @@ function Overview({ data, onRowClick, setTab }) {
           </div>
         </>
       )}
-    </div>
-  )
-}
-
-function TrackRow({ t, onClick }) {
-  const s = statusInfo(t.status)
-  return (
-    <div className="track-row editable" onClick={onClick}>
-      <div className="name">{t.name}</div>
-      <div className="status">
-        <span className="dot" style={{ background: s.color }} />
-        <span>{s.label}</span>
-      </div>
-      <div className="ms">{t.nextMilestone || '—'}</div>
-      <div className="bar-track">
-        <div className="bar-fill" style={{ width: `${t.percent}%`, background: s.color }} />
-      </div>
-      <div className="pct">{t.percent}%</div>
     </div>
   )
 }
