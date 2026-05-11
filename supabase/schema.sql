@@ -15,11 +15,10 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
--- A user can read/update their own profile; leads can read all
+-- A user can read their own profile (no lead check to avoid recursion)
 drop policy if exists "profiles read own" on public.profiles;
 create policy "profiles read own" on public.profiles
-  for select using (id = auth.uid()
-                    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'lead'));
+  for select using (id = auth.uid());
 
 drop policy if exists "profiles upsert own" on public.profiles;
 create policy "profiles upsert own" on public.profiles
