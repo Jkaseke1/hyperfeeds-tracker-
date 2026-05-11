@@ -32,7 +32,7 @@ export const STATUS = {
 // Track summaries shown on Overview tab.
 // `percent` is manual; `nextMilestone` and `estComplete` are display strings.
 export const tracks = [
-  { id: 'powerbi',    name: 'Power BI',                    status: 'IN_PROGRESS', percent: 18, nextMilestone: 'PB-02 Procurement, ETA Dec 2026', estComplete: 'Dec 2026 (full programme into 2027)' },
+  { id: 'powerbi',    name: 'Power BI',                    status: 'IN_PROGRESS', percent: 32, nextMilestone: 'PB-03 Stock Levels + PB-05 Debtors (May–Jun)', estComplete: 'Dec 2026 (full programme into 2027)' },
   { id: 'mes',        name: 'MES (HYPER-MES)',             status: 'TESTING',     percent: 35, nextMilestone: 'Stock Take + Sage Bridge, go-live Oct 2026', estComplete: 'Go-live Oct 2026; stabilisation into 2027' },
   { id: 'monitoring', name: 'Monitoring / PC Tools',       status: 'DEFERRED',    percent: 0,  nextMilestone: '',                                  estComplete: 'TBC' },
   { id: 'figjam',     name: 'FigJam Process Mapping',      status: 'PENDING',     percent: 5,  nextMilestone: 'Awaiting Kudzi session',           estComplete: 'TBC' },
@@ -41,11 +41,11 @@ export const tracks = [
 ]
 
 export const powerBi = [
-  { id: 'PB-01', title: 'Tonnage Page (Tonnage Sold at Branch)',          status: 'DEPLOYED',    targetDate: 'Apr 2026',   notes: 'Live and in use.' },
+  { id: 'PB-01', title: 'Tonnage Page (Tonnage Sold at Branch)',          status: 'DEPLOYED',    targetDate: 'Apr 2026',   notes: 'Live and in use. Also under test before final sign-off.' },
   { id: 'PB-02', title: 'Procurement Page',                               status: 'IN_PROGRESS', targetDate: 'May 2026',   notes: 'Active build.' },
-  { id: 'PB-03', title: 'Stock Levels Page',                              status: 'PLANNED',     targetDate: 'Jun 2026',   notes: '' },
+  { id: 'PB-03', title: 'Stock Levels Page',                              status: 'IN_PROGRESS', targetDate: 'Jun 2026',   notes: 'Almost done — figures being corrected and verified by Accounts.' },
   { id: 'PB-04', title: 'Sales Analysis Page (Enhanced)',                 status: 'PLANNED',     targetDate: 'Jul 2026',   notes: '' },
-  { id: 'PB-05', title: 'Creditors / Finance Page',                       status: 'PLANNED',     targetDate: 'Aug 2026',   notes: '' },
+  { id: 'PB-05', title: 'Creditors / Debtors / Finance Page',             status: 'IN_PROGRESS', targetDate: 'Jun 2026',   notes: 'Debtors work to be concluded end of May into June.' },
   { id: 'PB-06', title: 'Production Page (requires MES live)',            status: 'PLANNED',     targetDate: 'Sep 2026',   notes: 'Dependent on MES go-live.' },
   { id: 'PB-07', title: 'Cloud Capacity Planning',                        status: 'PLANNED',     targetDate: 'Dec 2026',   notes: '' },
   { id: 'PB-08', title: 'Polish, UAT & Stakeholder Sign-off (all pages)', status: 'ONGOING',     targetDate: 'Dec 2026+',  notes: 'Continuous through 2027.' },
