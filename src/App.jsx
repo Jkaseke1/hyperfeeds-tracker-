@@ -20,7 +20,7 @@ function loadInitial() {
 const TABS = [
   { id: 'overview',     label: 'Overview' },
   { id: 'powerbi',      label: 'Power BI' },
-  { id: 'mes',          label: 'MES' },
+  { id: 'mes',          label: 'Hyper MS' },
   { id: 'tracks',       label: 'Other Tracks' },
   { id: 'stakeholders', label: 'Stakeholders' },
 ]
@@ -309,11 +309,11 @@ function MES({ data, onEdit }) {
     <div>
       <Deliverables
         kind="mes"
-        title="MES (HYPER-MES)"
-        subtitle="12 components · go-live Oct 2026 · stabilisation into 2027"
+        title="Hyper Manufacturing System"
+        subtitle="12 components · go-live Aug 2026 · full stabilisation Aug 2027"
         rows={data.mes}
         onEdit={onEdit}
-        note="Long-term programme — full stability expected 12+ months post go-live (into 2027 and beyond)."
+        note="Long-term programme — full stability expected ~12 months post go-live (by Aug 2027)."
       />
       <div className="section-label">Key Facts</div>
       <div className="facts">
