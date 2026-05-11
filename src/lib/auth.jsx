@@ -19,20 +19,41 @@ export function AuthProvider({ children }) {
 
     async function loadProfile(u) {
       if (!u) { setProfile(null); return }
-      const { data } = await supabase.from('profiles').select('*').eq('id', u.id).maybeSingle()
-      if (!mounted) return
-      // Auto-create profile row if missing (first-time login)
-      if (!data) {
-        const insert = {
-          id: u.id,
-          email: u.email,
-          full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
-          role: 'viewer',
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', u.id).maybeSingle()
+        if (!mounted) return
+        if (error) {
+          console.error('Profile fetch error:', error)
+          setProfile(null)
+          return
         }
-        await supabase.from('profiles').insert(insert)
-        setProfile(insert)
-      } else {
-        setProfile(data)
+        // Auto-create profile row if missing (first-time login)
+        if (!data) {
+          const insert = {
+            id: u.id,
+            email: u.email,
+            full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
+            role: 'viewer',
+          }
+          const { error: insertError } = await supabase.from('profiles').insert(insert)
+          if (!mounted) return
+          if (insertError) {
+            // 409 = profile already exists, try fetching again
+            if (insertError.code === '23505' || insertError.message.includes('duplicate')) {
+              const retry = await supabase.from('profiles').select('*').eq('id', u.id).maybeSingle()
+              if (retry.data && mounted) setProfile(retry.data)
+            } else {
+              console.error('Profile insert error:', insertError)
+            }
+          } else if (mounted) {
+            setProfile(insert)
+          }
+        } else {
+          setProfile(data)
+        }
+      } catch (err) {
+        console.error('Profile load error:', err)
+        if (mounted) setProfile(null)
       }
     }
 
