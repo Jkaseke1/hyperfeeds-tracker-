@@ -36,13 +36,14 @@ export const tracks = [
   { id: 'mes',        name: 'Hyper Manufacturing System',  status: 'TESTING',     percent: 35, nextMilestone: 'Stock Take + Sage Bridge, go-live Aug 2026', estComplete: 'Go-live Aug 2026; full stabilisation Aug 2027' },
 ]
 
+// Ordered by expected finishing date (earliest first).
 export const powerBi = [
   { id: 'PB-01', title: 'Tonnage Page (Tonnage Sold at Branch)',          status: 'DEPLOYED',    targetDate: 'Apr 2026',   notes: 'Live and in use. Also under test before final sign-off.' },
-  { id: 'PB-02', title: 'Procurement Page',                               status: 'IN_PROGRESS', targetDate: 'May 2026',   notes: 'Active build.' },
   { id: 'PB-03', title: 'Stock Levels Page',                              status: 'IN_PROGRESS', targetDate: 'Jun 2026',   notes: 'Almost done — figures being corrected and verified by Accounts.' },
-  { id: 'PB-04', title: 'Sales Analysis Page (Enhanced)',                 status: 'PLANNED',     targetDate: 'Jul 2026',   notes: '' },
   { id: 'PB-05', title: 'Creditors / Debtors / Finance Page',             status: 'IN_PROGRESS', targetDate: 'Jun 2026',   notes: 'Debtors work to be concluded end of May into June.' },
-  { id: 'PB-06', title: 'Production Page (requires MES live)',            status: 'PLANNED',     targetDate: 'Sep 2026',   notes: 'Dependent on MES go-live.' },
+  { id: 'PB-02', title: 'Procurement Page',                               status: 'PLANNED',     targetDate: 'Jul 2026',   notes: 'Not yet started — to begin once Stock Levels and Debtors are finalised.' },
+  { id: 'PB-04', title: 'Sales Analysis Page (Enhanced)',                 status: 'PLANNED',     targetDate: 'Aug 2026',   notes: '' },
+  { id: 'PB-06', title: 'Production Page (requires MES live)',            status: 'PLANNED',     targetDate: 'Sep 2026',   notes: 'Dependent on HMS go-live (Aug 2026).' },
   { id: 'PB-07', title: 'Cloud Capacity Planning',                        status: 'PLANNED',     targetDate: 'Dec 2026',   notes: '' },
   { id: 'PB-08', title: 'Polish, UAT & Stakeholder Sign-off (all pages)', status: 'ONGOING',     targetDate: 'Dec 2026+',  notes: 'Continuous through 2027.' },
 ]
