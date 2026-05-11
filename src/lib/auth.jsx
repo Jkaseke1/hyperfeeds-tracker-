@@ -57,13 +57,24 @@ export function AuthProvider({ children }) {
     role: profile?.role || (user ? 'viewer' : null),
     loading,
     supabaseEnabled,
-    async signInWithMagicLink(email) {
+    async signInWithPassword(email, password) {
       if (!supabaseEnabled) throw new Error('Auth not configured')
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      return data
+    },
+    async signUp(email, password, fullName) {
+      if (!supabaseEnabled) throw new Error('Auth not configured')
+      const { data, error } = await supabase.auth.signUp({
         email,
-        options: { emailRedirectTo: window.location.href },
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: window.location.href,
+        },
       })
       if (error) throw error
+      return data
     },
     async signOut() {
       if (!supabaseEnabled) return

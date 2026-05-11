@@ -132,7 +132,7 @@ export default function App() {
             </div>
             <div className="actions">
               <LoginButton />
-              {canEdit && (
+              {!signedOut && canEdit && (
                 <>
                   <button className={`btn ${editing ? 'primary' : ''}`} onClick={() => setEditing(e => !e)}>
                     {editing ? 'Done editing' : 'Edit'}
