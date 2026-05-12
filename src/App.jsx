@@ -317,120 +317,96 @@ function Overview({ data, onRowClick, setTab }) {
   const focus = all.filter(r => ['IN_PROGRESS','TESTING'].includes(r.status))
 
   return (
-    <div>
-      {/* ---- HERO ---- */}
-      <div className="hero">
-        <div className="hero-head">
-          <div>
-            <h1 className="page-title" style={{ margin: 0 }}>{data.programme.title}</h1>
-            <p className="page-sub" style={{ marginTop: 6 }}>
-              {data.programme.startedLabel} · {data.tracks.length + data.otherTracks.length} digital tracks · {data.programme.ownerLabel}
-            </p>
-          </div>
-          <div className="health-badge" style={{ borderColor: health.color, color: health.color }}>
-            <span className="health-dot" style={{ background: health.color }} />
-            {health.label}
-          </div>
+    <div className="overview-clean">
+      {/* ---- HEADER ---- */}
+      <div className="ov-header">
+        <div>
+          <h1 className="page-title" style={{ margin: 0 }}>{data.programme.title}</h1>
+          <p className="page-sub" style={{ marginTop: 4 }}>
+            {data.programme.startedLabel} · {data.tracks.length + data.otherTracks.length} digital tracks · {data.programme.ownerLabel}
+          </p>
         </div>
-        <p className="hero-summary">
-          {health.desc} The Hyper Manufacturing System is in <strong>pre go-live testing</strong>, with cut-over targeted for
-          <strong> {data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026'}</strong> ({monthsToGoLive} months out).
-          Power BI is delivering on a monthly cadence — <strong>{liveN}</strong> page{liveN===1?'':'s'} already live, <strong>{buildN}</strong> in active build.
-        </p>
+        <div className="health-pill" style={{ background: health.color + '12', color: health.color, border: `1px solid ${health.color}40` }}>
+          <span className="health-dot" style={{ background: health.color }} />
+          {health.label}
+        </div>
       </div>
+
+      <p className="ov-summary">
+        {health.desc} HMS is in <strong>pre go-live testing</strong>, cut-over targeted for
+        <strong> {data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026'}</strong> ({monthsToGoLive} months out).
+        Power BI: <strong>{liveN}</strong> live, <strong>{buildN}</strong> in build.
+      </p>
 
       {/* ---- KPIs ---- */}
-      <div className="kpis">
-        <div className="kpi">
-          <div className="v">{liveN} <span className="kpi-of">/ {total}</span></div>
-          <div className="k">Deliverables live</div>
-        </div>
-        <div className="kpi">
-          <div className="v">{inFlight}</div>
-          <div className="k">In flight now</div>
-        </div>
-        <div className="kpi">
-          <div className="v">{avgPct}%</div>
-          <div className="k">Main programme complete</div>
-        </div>
-        <div className="kpi" style={{ borderLeft: `3px solid #1F3864` }}>
-          <div className="v" style={{ fontSize: 22 }}>{data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026'}</div>
-          <div className="k">HMS go-live · {monthsToGoLive}mo to go</div>
-        </div>
-      </div>
-
-      {/* ---- PROGRAMME DISTRIBUTION ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Programme Distribution</div>
-      <p className="section-desc">All {total} deliverables across every track, by lifecycle stage.</p>
-
-      <div className="dist-bar-wrap">
-        <div className="dist-bar" role="img" aria-label="Distribution of deliverables by stage">
-          {STAGES.map(stage => {
-            const n = byStage[stage.id].length
-            const pct = total ? (n / total) * 100 : 0
-            if (pct === 0) return null
-            return (
-              <div
-                key={stage.id}
-                className="dist-seg"
-                style={{ width: `${pct}%`, background: stage.color }}
-                title={`${stage.label}: ${n} (${Math.round(pct)}%)`}
-              />
-            )
-          })}
-        </div>
-        <div className="dist-chips">
-          {STAGES.map(stage => {
-            const n = byStage[stage.id].length
-            if (n === 0) return null
-            return (
-              <div key={stage.id} className="dist-chip">
-                <span className="dist-chip-dot" style={{ background: stage.color }} />
-                <span className="dist-chip-label">{stage.label}</span>
-                <span className="dist-chip-count">{n}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ---- ROADMAP ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Roadmap · Key Milestones</div>
-      <p className="section-desc">From the first Power BI go-live through HMS stabilisation.</p>
-      <div className="roadmap">
+      <div className="ov-kpis">
         {[
-          { date: 'Apr 2026', title: 'PB-01 Tonnage live',                phase: 'past' },
-          { date: 'Jun 2026', title: 'PB-03 Stock + PB-05 Debtors live',  phase: 'now'  },
-          { date: 'Jul 2026', title: 'PB-02 Procurement build',           phase: 'next' },
-          { date: 'Aug 2026', title: 'HMS Go-Live (supervised)',          phase: 'major', major: true },
-          { date: 'Sep 2026', title: 'PB-06 Production page',             phase: 'future' },
-          { date: 'Dec 2026', title: 'Power BI core complete',            phase: 'future' },
-          { date: 'Aug 2027', title: 'HMS full stabilisation',            phase: 'major', major: true },
-        ].map((m, i) => (
-          <div key={i} className={`milestone ${m.phase} ${m.major ? 'major' : ''}`}>
-            <div className="milestone-dot" />
-            <div className="milestone-date">{m.date}</div>
-            <div className="milestone-title">{m.title}</div>
+          { v: `${liveN} / ${total}`, k: 'Deliverables live' },
+          { v: `${inFlight}`, k: 'In flight now' },
+          { v: `${avgPct}%`, k: 'Programme complete' },
+          { v: data.mes.find(m=>m.id==='MES-11')?.targetDate || 'Aug 2026', k: `HMS go-live · ${monthsToGoLive}mo` },
+        ].map((kpi, i) => (
+          <div key={i} className="ov-kpi">
+            <div className="ov-kpi-v">{kpi.v}</div>
+            <div className="ov-kpi-k">{kpi.k}</div>
           </div>
         ))}
       </div>
 
-      {/* ---- THIS MONTH FOCUS ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Focus · {currentMonthLabel}</div>
-      <p className="section-desc">Deliverables actively being built or tested right now.</p>
+      {/* ---- STATUS GRID ---- */}
+      <div className="ov-section-title">Status Overview</div>
+      <p className="ov-section-desc">{total} deliverables by lifecycle stage</p>
+      <div className="ov-status-grid">
+        {STAGES.map(stage => {
+          const n = byStage[stage.id].length
+          if (n === 0) return null
+          return (
+            <div key={stage.id} className="ov-status-card" style={{ borderTopColor: stage.color }}>
+              <div className="ov-status-count" style={{ color: stage.color }}>{n}</div>
+              <div className="ov-status-label">{stage.label}</div>
+              <div className="ov-status-desc">{stage.desc}</div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ---- ROADMAP ---- */}
+      <div className="ov-section-title">Key Milestones</div>
+      <p className="ov-section-desc">From first Power BI go-live through HMS stabilisation</p>
+      <div className="ov-roadmap">
+        {[
+          { date: 'Apr 2026', title: 'PB-01 Tonnage live', phase: 'past' },
+          { date: 'Jun 2026', title: 'PB-03 Stock + PB-05 Debtors live', phase: 'now' },
+          { date: 'Jul 2026', title: 'PB-02 Procurement build', phase: 'next' },
+          { date: 'Aug 2026', title: 'HMS Go-Live (supervised)', phase: 'major', major: true },
+          { date: 'Sep 2026', title: 'PB-06 Production page', phase: 'future' },
+          { date: 'Dec 2026', title: 'Power BI core complete', phase: 'future' },
+          { date: 'Aug 2027', title: 'HMS full stabilisation', phase: 'major', major: true },
+        ].map((m, i) => (
+          <div key={i} className={`ov-milestone ${m.phase} ${m.major ? 'major' : ''}`}>
+            <div className="ov-milestone-dot" />
+            <div className="ov-milestone-date">{m.date}</div>
+            <div className="ov-milestone-title">{m.title}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ---- FOCUS ---- */}
+      <div className="ov-section-title">This Month · {currentMonthLabel}</div>
+      <p className="ov-section-desc">Deliverables actively being built or tested</p>
       {focus.length === 0 ? (
         <div className="muted" style={{ fontSize: 13 }}>Nothing in active build or testing.</div>
       ) : (
-        <div className="focus-list">
+        <div className="ov-focus">
           {focus.map(r => {
             const s = statusInfo(r.status)
             return (
-              <button key={`${r._tabId}:${r.id}`} className="focus-row" onClick={() => setTab(r._tabId)}>
-                <span className="focus-id">{r.id}</span>
-                <span className="focus-title">{r.title}</span>
-                <span className="focus-src">{r._source}</span>
+              <button key={`${r._tabId}:${r.id}`} className="ov-focus-row" onClick={() => setTab(r._tabId)}>
+                <span className="ov-focus-id">{r.id}</span>
+                <span className="ov-focus-title">{r.title}</span>
+                <span className="ov-focus-src">{r._source}</span>
                 <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
-                <span className="focus-target muted">{r.targetDate || ''}</span>
+                <span className="ov-focus-date muted">{r.targetDate || ''}</span>
               </button>
             )
           })}
@@ -438,7 +414,7 @@ function Overview({ data, onRowClick, setTab }) {
       )}
 
       {/* ---- MAIN TRACK CARDS ---- */}
-      <div className="section-label" style={{ marginTop: 32 }}>Main Tracks</div>
+      <div className="ov-section-title">Main Tracks</div>
       <div className="track-cards">
         {data.tracks.map((t, i) => {
           const s = statusInfo(t.status)
@@ -477,8 +453,8 @@ function Overview({ data, onRowClick, setTab }) {
       {/* ---- OTHER INITIATIVES ---- */}
       {data.otherTracks.length > 0 && (
         <>
-          <div className="section-label" style={{ marginTop: 32 }}>Other Initiatives</div>
-          <p className="section-desc">Smaller IT tracks. Capacity-dependent — may begin once main tracks free up.</p>
+          <div className="ov-section-title">Other Initiatives</div>
+          <p className="ov-section-desc">Smaller IT tracks. Capacity-dependent — may begin once main tracks free up.</p>
           <div className="other-grid">
             {data.otherTracks.map(t => {
               const s = statusInfo(t.status)
