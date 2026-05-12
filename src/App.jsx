@@ -359,41 +359,43 @@ function Overview({ data, onRowClick, setTab }) {
         </div>
       </div>
 
-      {/* ---- PROGRAMME DISTRIBUTION (stacked bar) ---- */}
-      <div className="section-label" style={{ marginTop: 36 }}>Programme Distribution</div>
+      {/* ---- PROGRAMME DISTRIBUTION ---- */}
+      <div className="section-label" style={{ marginTop: 32 }}>Programme Distribution</div>
       <p className="section-desc">All {total} deliverables across every track, by lifecycle stage.</p>
-      <div className="stack-bar" role="img" aria-label="Distribution of deliverables by stage">
-        {STAGES.map(stage => {
-          const n = byStage[stage.id].length
-          const pct = total ? (n / total) * 100 : 0
-          if (pct === 0) return null
-          return (
-            <div
-              key={stage.id}
-              className="stack-seg"
-              style={{ width: `${pct}%`, background: stage.color }}
-              title={`${stage.label}: ${n} (${Math.round(pct)}%)`}
-            >
-              {pct >= 8 && <span>{n}</span>}
-            </div>
-          )
-        })}
-      </div>
-      <div className="stack-legend">
-        {STAGES.map(stage => {
-          const n = byStage[stage.id].length
-          return (
-            <div key={stage.id} className="stack-leg-item">
-              <span className="stack-leg-dot" style={{ background: stage.color }} />
-              <span className="stack-leg-label">{stage.label}</span>
-              <span className="stack-leg-count">{n}</span>
-            </div>
-          )
-        })}
+
+      <div className="dist-bar-wrap">
+        <div className="dist-bar" role="img" aria-label="Distribution of deliverables by stage">
+          {STAGES.map(stage => {
+            const n = byStage[stage.id].length
+            const pct = total ? (n / total) * 100 : 0
+            if (pct === 0) return null
+            return (
+              <div
+                key={stage.id}
+                className="dist-seg"
+                style={{ width: `${pct}%`, background: stage.color }}
+                title={`${stage.label}: ${n} (${Math.round(pct)}%)`}
+              />
+            )
+          })}
+        </div>
+        <div className="dist-chips">
+          {STAGES.map(stage => {
+            const n = byStage[stage.id].length
+            if (n === 0) return null
+            return (
+              <div key={stage.id} className="dist-chip">
+                <span className="dist-chip-dot" style={{ background: stage.color }} />
+                <span className="dist-chip-label">{stage.label}</span>
+                <span className="dist-chip-count">{n}</span>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* ---- ROADMAP ---- */}
-      <div className="section-label" style={{ marginTop: 36 }}>Roadmap · Key Milestones</div>
+      <div className="section-label" style={{ marginTop: 32 }}>Roadmap · Key Milestones</div>
       <p className="section-desc">From the first Power BI go-live through HMS stabilisation.</p>
       <div className="roadmap">
         {[
@@ -414,7 +416,7 @@ function Overview({ data, onRowClick, setTab }) {
       </div>
 
       {/* ---- THIS MONTH FOCUS ---- */}
-      <div className="section-label" style={{ marginTop: 36 }}>Focus · {currentMonthLabel}</div>
+      <div className="section-label" style={{ marginTop: 32 }}>Focus · {currentMonthLabel}</div>
       <p className="section-desc">Deliverables actively being built or tested right now.</p>
       {focus.length === 0 ? (
         <div className="muted" style={{ fontSize: 13 }}>Nothing in active build or testing.</div>
@@ -436,7 +438,7 @@ function Overview({ data, onRowClick, setTab }) {
       )}
 
       {/* ---- MAIN TRACK CARDS ---- */}
-      <div className="section-label" style={{ marginTop: 36 }}>Main Tracks</div>
+      <div className="section-label" style={{ marginTop: 32 }}>Main Tracks</div>
       <div className="track-cards">
         {data.tracks.map((t, i) => {
           const s = statusInfo(t.status)
@@ -475,7 +477,7 @@ function Overview({ data, onRowClick, setTab }) {
       {/* ---- OTHER INITIATIVES ---- */}
       {data.otherTracks.length > 0 && (
         <>
-          <div className="section-label" style={{ marginTop: 36 }}>Other Initiatives</div>
+          <div className="section-label" style={{ marginTop: 32 }}>Other Initiatives</div>
           <p className="section-desc">Smaller IT tracks. Capacity-dependent — may begin once main tracks free up.</p>
           <div className="other-grid">
             {data.otherTracks.map(t => {
