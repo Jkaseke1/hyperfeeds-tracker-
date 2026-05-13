@@ -51,7 +51,7 @@ export const powerBi = [
 export const mes = [
   { id: 'MES-01', title: 'Production Planning',                          status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '' },
   { id: 'MES-02', title: 'Formulations & BOM (83 formulations seeded)',  status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '83 formulations seeded.' },
-  { id: 'MES-03', title: 'Raw Materials — all functions (73 RMs live)',  status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '73 RMs live.' },
+  { id: 'MES-03', title: 'Raw Materials — all functions (73 RMs live)',  status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: 'Currently testing: Weigh Bridge Ticket, GRN, Stock Dashboard, Monthly Receipts, Monthly Issues, Historical Snapshots, RM Warehouse/Inventory, Stock Take (touch-ups), Material Transfer, Quality Inspections, RM Prices Report.' },
   { id: 'MES-04', title: 'Production Execution (batch tracking)',        status: 'TESTING', targetDate: 'May 2026', phase: 'pre',  notes: '' },
   { id: 'MES-05', title: 'Stock Take / Inventory',                       status: 'TESTING', targetDate: 'Jun 2026', phase: 'pre',  notes: '' },
   { id: 'MES-06', title: 'Sage 200 Bridge (all 7 events)',               status: 'TESTING', targetDate: 'Jun 2026', phase: 'pre',  notes: 'Bridge: localhost:50119' },
