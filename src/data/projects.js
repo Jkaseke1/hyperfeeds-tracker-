@@ -137,6 +137,22 @@ export const otherTracks = [
       { id: 'SOP-07', title: 'System Maintenance SOP',            status: 'PENDING', targetDate: 'TBC', notes: 'Patching, updates, optimization, preventive maintenance.' },
     ],
   },
+  {
+    id: 'capacity-planning',
+    title: 'Capacity Planning',
+    status: 'PENDING',
+    owner: 'Joseph (IT Lead)',
+    targetStart: 'Preparation mode',
+    description: 'Plan and forecast IT resource capacity (staff, infrastructure, licenses) to support current operations and future growth. Identify bottlenecks and optimize resource allocation.',
+    note: 'Not started — in preparation mode. Assess current capacity and plan for HMS go-live and Power BI expansion.',
+    items: [
+      { id: 'CAP-01', title: 'Assess current IT staff capacity',           status: 'PENDING', targetDate: 'TBC', notes: 'Map roles, workload, availability. Identify gaps.' },
+      { id: 'CAP-02', title: 'Forecast resource needs for HMS go-live',    status: 'PENDING', targetDate: 'TBC', notes: 'Support, training, maintenance during Aug 2026 go-live.' },
+      { id: 'CAP-03', title: 'Plan infrastructure scaling',                status: 'PENDING', targetDate: 'TBC', notes: 'Server, storage, network capacity for growth.' },
+      { id: 'CAP-04', title: 'Review software license capacity',           status: 'PENDING', targetDate: 'TBC', notes: 'Current usage vs. available licenses. Plan upgrades.' },
+      { id: 'CAP-05', title: 'Identify training & skill gaps',             status: 'PENDING', targetDate: 'TBC', notes: 'Staff upskilling for new systems and tools.' },
+    ],
+  },
 ]
 
 export const stakeholders = [
