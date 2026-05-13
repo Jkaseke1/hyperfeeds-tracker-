@@ -150,7 +150,7 @@ export const otherTracks = [
       { id: 'CAP-02', title: 'Forecast resource needs for HMS go-live',    status: 'PENDING', targetDate: 'TBC', notes: 'Support, training, maintenance during Aug 2026 go-live.' },
       { id: 'CAP-03', title: 'Plan infrastructure scaling',                status: 'PENDING', targetDate: 'TBC', notes: 'Server, storage, network capacity for growth.' },
       { id: 'CAP-04', title: 'Review software license capacity',           status: 'PENDING', targetDate: 'TBC', notes: 'Current usage vs. available licenses. Plan upgrades.' },
-      { id: 'CAP-05', title: 'Identify training & skill gaps',             status: 'PENDING', targetDate: 'TBC', notes: 'Staff upskilling for new systems and tools.' },
+      { id: 'CAP-05', title: 'Upskill IT team for digital transformation',  status: 'PENDING', targetDate: 'TBC', notes: 'Training on Power BI, HMS, cloud tools, automation. Upgrade knowledge to drive digital tools adoption and ease business operations.' },
     ],
   },
 ]
