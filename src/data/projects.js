@@ -119,6 +119,24 @@ export const otherTracks = [
       { id: 'AUT-04', title: 'Purchase approval workflow (PO routing)',        status: 'TBC', targetDate: 'TBC', notes: 'Multi-level approval.' },
     ],
   },
+  {
+    id: 'it-sop',
+    title: 'IT Quality Management System (SOP)',
+    status: 'PENDING',
+    owner: 'Joseph (IT Lead)',
+    targetStart: 'Preparation mode',
+    description: 'Establish documented IT Standard Operating Procedures and Quality Objectives. Covers incident management, change control, asset tracking, security, backups, and continuous improvement. Scalable to other departments.',
+    note: 'Not started — in preparation mode. Document created; awaiting MD approval and team training.',
+    items: [
+      { id: 'SOP-01', title: 'Incident Management SOP',           status: 'PENDING', targetDate: 'TBC', notes: 'Response times, severity levels, escalation process.' },
+      { id: 'SOP-02', title: 'Change Management SOP',             status: 'PENDING', targetDate: 'TBC', notes: 'Planning, testing, approval, rollback procedures.' },
+      { id: 'SOP-03', title: 'Problem Management SOP',            status: 'PENDING', targetDate: 'TBC', notes: 'Root cause analysis, permanent fixes for recurring issues.' },
+      { id: 'SOP-04', title: 'Asset Management SOP',              status: 'PENDING', targetDate: 'TBC', notes: 'Hardware, software, license tracking and maintenance.' },
+      { id: 'SOP-05', title: 'Backup & Disaster Recovery SOP',    status: 'PENDING', targetDate: 'TBC', notes: 'Daily backups, recovery drills, RTO/RPO targets.' },
+      { id: 'SOP-06', title: 'Security & Access Control SOP',     status: 'PENDING', targetDate: 'TBC', notes: 'User access, authentication, data encryption, compliance.' },
+      { id: 'SOP-07', title: 'System Maintenance SOP',            status: 'PENDING', targetDate: 'TBC', notes: 'Patching, updates, optimization, preventive maintenance.' },
+    ],
+  },
 ]
 
 export const stakeholders = [
