@@ -6,7 +6,7 @@ import Comments from './components/Comments.jsx'
 import Inbox from './components/Inbox.jsx'
 
 // ---------- Persistence ----------
-const STORAGE_KEY = 'hyperfeeds-tracker-edits'
+const STORAGE_KEY = 'hyperfeeds-tracker-user-edits'
 
 function loadInitial() {
   try {
