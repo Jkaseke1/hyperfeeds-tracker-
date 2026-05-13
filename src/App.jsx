@@ -603,6 +603,7 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
               <th style={{width: '140px'}}>Status</th>
               <th style={{width: '120px'}}>Target</th>
               <th>Notes</th>
+              <th style={{width: '50px', textAlign: 'center'}}>💬</th>
             </tr>
           </thead>
           <tbody>
@@ -617,11 +618,12 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
                   </td>
                   <td className="muted">{r.targetDate}</td>
                   <td className="muted">{r.notes || '—'}</td>
+                  <td style={{ textAlign: 'center', fontSize: 16, cursor: 'pointer' }}>💬</td>
                 </tr>
               )
             })}
             {visible.length === 0 && (
-              <tr><td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '24px' }}>No deliverables match this filter.</td></tr>
+              <tr><td colSpan={6} className="muted" style={{ textAlign: 'center', padding: '24px' }}>No deliverables match this filter.</td></tr>
             )}
           </tbody>
         </table>
@@ -775,14 +777,14 @@ function Detail({ target, onClose }) {
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="modal" style={{ maxWidth: 640 }}>
+      <div className="modal" style={{ maxWidth: 720, maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-head">
           <h3>{item.id ? `${item.id} · ` : ''}{item.title || item.name}</h3>
           <button type="button" className="btn small" onClick={onClose}>Close</button>
         </div>
         <div className="modal-body">
           {s && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
               <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
               {item.targetDate && <span style={{ fontSize: 12, color: 'var(--slate)' }}>Target: {item.targetDate}</span>}
               {typeof item.percent === 'number' && (
@@ -790,13 +792,20 @@ function Detail({ target, onClose }) {
               )}
             </div>
           )}
-          {item.nextMilestone && <div style={{ fontSize: 13 }}><strong>Next:</strong> {item.nextMilestone}</div>}
-          {item.estComplete    && <div style={{ fontSize: 13 }}><strong>ETA:</strong> {item.estComplete}</div>}
-          {item.notes          && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.notes}</div>}
-          {item.note           && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.note}</div>}
-          {item.role           && <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.role}</div>}
+          {item.nextMilestone && <div style={{ fontSize: 13, marginBottom: 8 }}><strong>Next:</strong> {item.nextMilestone}</div>}
+          {item.estComplete    && <div style={{ fontSize: 13, marginBottom: 8 }}><strong>ETA:</strong> {item.estComplete}</div>}
+          {item.notes          && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.notes}</div>}
+          {item.note           && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.note}</div>}
+          {item.role           && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.role}</div>}
 
-          {showComments && <Comments kind={kind} itemId={commentItemId} />}
+          {showComments && (
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid var(--border)' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 16 }}>
+                💬 Manager Notes & Feedback
+              </div>
+              <Comments kind={kind} itemId={commentItemId} />
+            </div>
+          )}
         </div>
       </div>
     </div>
