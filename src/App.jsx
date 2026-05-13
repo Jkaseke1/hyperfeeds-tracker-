@@ -6,14 +6,21 @@ import Comments from './components/Comments.jsx'
 import Inbox from './components/Inbox.jsx'
 
 // ---------- Persistence ----------
-const STORAGE_KEY = 'hyperfeeds-tracker:v8'
+const STORAGE_KEY = 'hyperfeeds-tracker-edits'
 
 function loadInitial() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return structuredClone(defaultData)
     const saved = JSON.parse(raw)
-    return { ...structuredClone(defaultData), ...saved }
+    // Always merge with fresh defaults to pick up new tracks/items
+    const merged = structuredClone(defaultData)
+    // Only preserve user edits to existing items (don't override structure)
+    if (saved.tracks) merged.tracks = saved.tracks
+    if (saved.powerBi) merged.powerBi = saved.powerBi
+    if (saved.mes) merged.mes = saved.mes
+    if (saved.otherTracks) merged.otherTracks = saved.otherTracks
+    return merged
   } catch {
     return structuredClone(defaultData)
   }
