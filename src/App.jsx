@@ -128,8 +128,8 @@ export default function App() {
 
       <main className="main">
         {editing && canEdit && (
-          <div className="banner-edit">
-            Edit mode — click any row to edit. Changes saved to your browser.
+          <div className="banner-edit" style={{ background: '#FEF3C7', border: '2px solid #F59E0B', color: '#92400E', padding: '12px 20px', borderRadius: 8, marginBottom: 16, fontSize: 14, fontWeight: 600 }}>
+            ✏️ Edit Mode Active — Click any row to edit status, dates, notes, and other fields. Changes are saved automatically.
           </div>
         )}
 
@@ -142,8 +142,19 @@ export default function App() {
               <LoginButton />
               {!signedOut && canEdit && (
                 <>
-                  <button className={`btn ${editing ? 'primary' : ''}`} onClick={() => setEditing(e => !e)}>
-                    {editing ? 'Done editing' : 'Edit'}
+                  <button 
+                    className={`btn ${editing ? 'primary' : ''}`} 
+                    onClick={() => setEditing(e => !e)}
+                    style={{ 
+                      fontWeight: 700, 
+                      fontSize: 14,
+                      padding: '10px 20px',
+                      background: editing ? '#10B981' : '#3B82F6',
+                      color: 'white',
+                      border: 'none'
+                    }}
+                  >
+                    {editing ? '✓ Done Editing' : '✏️ Edit Status & Fields'}
                   </button>
                   <button className="btn" onClick={exportJson}>Export JSON</button>
                   <button className="btn danger" onClick={resetAll}>Reset</button>
