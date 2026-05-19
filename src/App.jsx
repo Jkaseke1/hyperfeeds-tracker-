@@ -603,7 +603,7 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
               <th style={{width: '140px'}}>Status</th>
               <th style={{width: '120px'}}>Target</th>
               <th>Notes</th>
-              <th style={{width: '50px', textAlign: 'center'}}>💬</th>
+              <th style={{width: '100px', textAlign: 'center'}}>Comments</th>
             </tr>
           </thead>
           <tbody>
@@ -618,7 +618,22 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
                   </td>
                   <td className="muted">{r.targetDate}</td>
                   <td className="muted">{r.notes || '—'}</td>
-                  <td style={{ textAlign: 'center', fontSize: 16, cursor: 'pointer' }}>💬</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: 4, 
+                      padding: '4px 10px', 
+                      background: '#3B82F6', 
+                      color: 'white', 
+                      borderRadius: 4, 
+                      fontSize: 12, 
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}>
+                      � View
+                    </span>
+                  </td>
                 </tr>
               )
             })}
@@ -794,14 +809,23 @@ function Detail({ target, onClose }) {
           )}
           {item.nextMilestone && <div style={{ fontSize: 13, marginBottom: 8 }}><strong>Next:</strong> {item.nextMilestone}</div>}
           {item.estComplete    && <div style={{ fontSize: 13, marginBottom: 8 }}><strong>ETA:</strong> {item.estComplete}</div>}
-          {item.notes          && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.notes}</div>}
-          {item.note           && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.note}</div>}
-          {item.role           && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.role}</div>}
+          
+          {(item.notes || item.note) && (
+            <div style={{ marginTop: 12, marginBottom: 12, padding: 12, background: '#F8FAFC', borderRadius: 6, borderLeft: '3px solid #94A3B8' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, textTransform: 'uppercase' }}>Project Notes (Static)</div>
+              <div style={{ fontSize: 13, color: 'var(--slate)' }}>{item.notes || item.note}</div>
+            </div>
+          )}
+          
+          {item.role && <div style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 8 }}>{item.role}</div>}
 
           {showComments && (
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid var(--border)' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 16 }}>
-                💬 Manager Notes & Feedback
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#1E40AF', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                � Manager Comments & Feedback
+              </div>
+              <div style={{ fontSize: 12, color: '#64748B', marginBottom: 16 }}>
+                Add your updates, questions, or feedback below. IT Lead will be notified.
               </div>
               <Comments kind={kind} itemId={commentItemId} />
             </div>
