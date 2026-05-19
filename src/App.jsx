@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { defaultData, STATUS } from './data/projects.js'
 import { useAuth } from './lib/auth.jsx'
+import { supabase, supabaseEnabled } from './lib/supabase.js'
 import LoginButton from './components/LoginButton.jsx'
 import Comments from './components/Comments.jsx'
 import Inbox from './components/Inbox.jsx'
@@ -578,8 +579,31 @@ const FILTERS = [
 
 function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
   const [filter, setFilter] = useState('all')
+  const [commentsData, setCommentsData] = useState({})
+  const { user } = useAuth()
   const f = FILTERS.find(x => x.id === filter) || FILTERS[0]
   const visible = rows.map((r, i) => ({ r, i })).filter(({ r }) => f.match(r))
+
+  useEffect(() => {
+    async function loadComments() {
+      if (!supabaseEnabled || !user) return
+      const { data } = await supabase
+        .from('comments')
+        .select('item_id, body, created_at')
+        .eq('item_kind', kind)
+        .order('created_at', { ascending: false })
+      
+      if (data) {
+        const grouped = {}
+        data.forEach(c => {
+          if (!grouped[c.item_id]) grouped[c.item_id] = []
+          grouped[c.item_id].push(c)
+        })
+        setCommentsData(grouped)
+      }
+    }
+    loadComments()
+  }, [kind, user])
 
   return (
     <div>
@@ -602,13 +626,17 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
               <th>Deliverable</th>
               <th style={{width: '140px'}}>Status</th>
               <th style={{width: '120px'}}>Target</th>
-              <th>Notes</th>
+              <th>Notes / Latest Comment</th>
               <th style={{width: '100px', textAlign: 'center'}}>Comments</th>
             </tr>
           </thead>
           <tbody>
             {visible.map(({ r, i }) => {
               const s = statusInfo(r.status)
+              const comments = commentsData[r.id] || []
+              const latestComment = comments[0]
+              const commentCount = comments.length
+              
               return (
                 <tr key={r.id} className="editable" onClick={() => onRowClick(kind, i, r)}>
                   <td className="id">{r.id}</td>
@@ -617,21 +645,54 @@ function Deliverables({ kind, title, subtitle, rows, onRowClick, note }) {
                     <span className="pill" style={{ color: s.color, background: alphaBg(s.color) }}>{s.label}</span>
                   </td>
                   <td className="muted">{r.targetDate}</td>
-                  <td className="muted">{r.notes || '—'}</td>
+                  <td className="muted">
+                    {latestComment ? (
+                      <div>
+                        <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600, marginBottom: 2 }}>
+                          💬 Latest: {new Date(latestComment.created_at).toLocaleDateString()}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#374151' }}>
+                          {latestComment.body.length > 60 ? latestComment.body.substring(0, 60) + '...' : latestComment.body}
+                        </div>
+                      </div>
+                    ) : (
+                      r.notes || '—'
+                    )}
+                  </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{ 
                       display: 'inline-flex', 
                       alignItems: 'center', 
                       gap: 4, 
                       padding: '4px 10px', 
-                      background: '#3B82F6', 
+                      background: commentCount > 0 ? '#10B981' : '#3B82F6', 
                       color: 'white', 
                       borderRadius: 4, 
                       fontSize: 12, 
                       fontWeight: 600,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      position: 'relative'
                     }}>
-                      � View
+                      📝 View
+                      {commentCount > 0 && (
+                        <span style={{ 
+                          position: 'absolute', 
+                          top: -6, 
+                          right: -6, 
+                          background: '#EF4444', 
+                          color: 'white', 
+                          borderRadius: '50%', 
+                          width: 18, 
+                          height: 18, 
+                          fontSize: 10, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontWeight: 700
+                        }}>
+                          {commentCount}
+                        </span>
+                      )}
                     </span>
                   </td>
                 </tr>
