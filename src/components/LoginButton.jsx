@@ -35,7 +35,7 @@ export default function LoginButton() {
     try {
       if (mode === 'reset') {
         await resetPassword(email.trim())
-        setMsg('Password reset email sent! Check your inbox.')
+        setMsg('Password reset email sent! Check your inbox (including spam folder).')
         setMode('signin')
       } else if (mode === 'signin') {
         await signInWithPassword(email.trim(), password)
@@ -48,7 +48,11 @@ export default function LoginButton() {
         setPassword('')
       }
     } catch (e) {
-      setErr(e.message || 'Authentication failed.')
+      if (mode === 'reset') {
+        setErr('Unable to send reset email. Please contact Joseph (IT Lead) at it02@hyperfeeds.co.zw to reset your password manually.')
+      } else {
+        setErr(e.message || 'Authentication failed.')
+      }
     } finally { setBusy(false) }
   }
 
