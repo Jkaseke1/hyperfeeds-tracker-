@@ -102,6 +102,13 @@ export function AuthProvider({ children }) {
       await supabase.auth.signOut()
       setProfile(null)
     },
+    async resetPassword(email) {
+      if (!supabaseEnabled) throw new Error('Auth not configured')
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) throw error
+    },
   }), [user, profile, loading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 
 export default function LoginButton() {
-  const { user, profile, role, loading, supabaseEnabled, signInWithPassword, signUp, signOut } = useAuth()
+  const { user, profile, role, loading, supabaseEnabled, signInWithPassword, signUp, signOut, resetPassword } = useAuth()
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
+  const [mode, setMode] = useState('signin') // 'signin' | 'signup' | 'reset'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -33,7 +33,11 @@ export default function LoginButton() {
     e.preventDefault()
     setBusy(true); setErr(''); setMsg('')
     try {
-      if (mode === 'signin') {
+      if (mode === 'reset') {
+        await resetPassword(email.trim())
+        setMsg('Password reset email sent! Check your inbox.')
+        setMode('signin')
+      } else if (mode === 'signin') {
         await signInWithPassword(email.trim(), password)
         setMsg('Signed in successfully.')
         setOpen(false)
@@ -55,7 +59,7 @@ export default function LoginButton() {
         <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
           <form className="modal" style={{ maxWidth: 400 }} onSubmit={submit}>
             <div className="modal-head">
-              <h3>{mode === 'signin' ? 'Sign in' : 'Create account'}</h3>
+              <h3>{mode === 'reset' ? 'Reset Password' : mode === 'signin' ? 'Sign in' : 'Create account'}</h3>
               <button type="button" className="btn small" onClick={() => setOpen(false)}>Close</button>
             </div>
             <div className="modal-body">
@@ -67,14 +71,16 @@ export default function LoginButton() {
                   placeholder="you@hyperfeeds.co.zw"
                 />
               </div>
-              <div className="field">
-                <label>Password</label>
-                <input
-                  type="password" required
-                  value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
+              {mode !== 'reset' && (
+                <div className="field">
+                  <label>Password</label>
+                  <input
+                    type="password" required
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
               {mode === 'signup' && (
                 <div className="field">
                   <label>Full name</label>
@@ -85,20 +91,38 @@ export default function LoginButton() {
                   />
                 </div>
               )}
-              {msg && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 8 }}>{msg}</div>}
-              {err && <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 8 }}>{err}</div>}
+              {mode === 'signin' && (
+                <button
+                  type="button"
+                  onClick={() => { setMode('reset'); setErr(''); setMsg('') }}
+                  style={{ fontSize: 12, color: '#3B82F6', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', marginTop: -8 }}
+                >
+                  Forgot password?
+                </button>
+              )}
+              {mode === 'reset' && (
+                <div style={{ fontSize: 13, color: '#64748B', marginTop: 8 }}>
+                  Enter your email and we'll send you a link to reset your password.
+                </div>
+              )}
+              {msg && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 8, padding: 8, background: '#F0FDF4', borderRadius: 4 }}>{msg}</div>}
+              {err && <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 8, padding: 8, background: '#FEF2F2', borderRadius: 4 }}>{err}</div>}
             </div>
             <div className="modal-foot">
               <button
                 type="button"
                 className="btn small"
-                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErr(''); setMsg('') }}
+                onClick={() => { 
+                  if (mode === 'reset') setMode('signin')
+                  else setMode(mode === 'signin' ? 'signup' : 'signin')
+                  setErr(''); setMsg('') 
+                }}
                 style={{ fontSize: 12 }}
               >
-                {mode === 'signin' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
+                {mode === 'reset' ? 'Back to sign in' : mode === 'signin' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
               </button>
               <button type="submit" className="btn primary" disabled={busy}>
-                {busy ? 'Processing…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+                {busy ? 'Processing…' : mode === 'reset' ? 'Send reset link' : mode === 'signin' ? 'Sign in' : 'Create account'}
               </button>
             </div>
           </form>
